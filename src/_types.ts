@@ -314,7 +314,7 @@ export enum RequestMethod {
 }
 
 /**
- *
+ * Full list of Request Methods
  */
 export const RequestMethods: RequestMethod[] = [
   RequestMethod.DELETE,
