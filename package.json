@@ -2,7 +2,7 @@
   "name": "@glasswing/http",
   "version": "0.0.1",
   "description": "GlassWingJs HTTP Definitions Package",
-  "main": "dist/index.js",
+  "main": "dist/es2017/index.js",
   "scripts": {
     "build": "rollup -c --environment NODE_ENV:production",
     "build:dts": "dts-bundle-generator ./src/index.ts -o dist/index.d.ts",
@@ -24,14 +24,14 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/dragoscirjan/template-ts.git"
+    "url": "git+https://github.com/glasswingjs/http.git"
   },
   "author": "Dragos Cirjan",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/dragoscirjan/template-ts/issues"
+    "url": "https://github.com/glasswingjs/http/issues"
   },
-  "homepage": "https://github.com/dragoscirjan/template-ts#readme",
+  "homepage": "https://github.com/glasswingjs/http",
   "devDependencies": {
     "@types/chai": "^4.2.3",
     "@types/mocha": "^5.2.7",
