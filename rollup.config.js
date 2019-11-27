@@ -1,13 +1,24 @@
 import typescript from "rollup-plugin-typescript2";
-// import cfg from './tsconfig.json';
 
 const isProduction = process.env.NODE_ENV === "production";
-const entryName = "index";
-// const defaultCfg = { ...cfg, include: ['src'], exclude: undefined };
 
-// defaultCfg.compilerOptions.module = 'es2015';
-// defaultCfg.compilerOptions.noEmitHelpers = true;
-// defaultCfg.compilerOptions.importHelpers = true;
+const entryName = "index";
+
+
+const ts = (target = 'es2015') => typescript({
+  cacheRoot: ".rollupcache",
+  // tsconfigDefaults: defaultCfg,
+  // tsconfig: undefined,
+  tsconfigOverride: {
+    compilerOptions: {
+      module: "es2015",
+      target: target,
+    },
+    exclude: [],
+    include: ["src"],
+  },
+  useTsconfigDeclarationDir: true,
+});
 
 export default [{
   input: `src/${entryName}.ts`,
@@ -19,25 +30,10 @@ export default [{
     {
       file: `dist/umd-es2015/${entryName}.js`,
       format: "umd",
-      name: "gw.config",
+      name: "gw.http",
     },
   ],
-  plugins: [
-    typescript({
-      cacheRoot: ".rollupcache",
-      // tsconfigDefaults: defaultCfg,
-      // tsconfig: undefined,
-      tsconfigOverride: {
-        compilerOptions: {
-          module: "es2015",
-          target: "es2015",
-        },
-        exclude: ["src/internal.d.ts"],
-        include: ["src"],
-      },
-      useTsconfigDeclarationDir: true,
-    }),
-  ],
+  plugins: [ ts(), ],
 }].concat(!isProduction
   ? []
   : [
@@ -48,21 +44,7 @@ export default [{
         file: `dist/es2017/${entryName}.js`,
         format: "es",
       },
-      plugins: [
-        typescript({
-          // tsconfigDefaults: defaultCfg,
-          // tsconfig: undefined,
-          cacheRoot: ".rollupcache",
-          tsconfigOverride: {
-            compilerOptions: {
-              module: "es2015",
-              target: "es2017",
-            },
-            exclude: ["src/internal.d.ts"],
-            include: ["src"],
-          },
-        }),
-      ],
+      plugins: [ ts('es2017'), ],
     },
     {
       input: `src/${entryName}.ts`,
@@ -72,25 +54,11 @@ export default [{
         { file: `dist/native-modules/${entryName}.js`, format: "es" },
         { file: `dist/umd/${entryName}.js`,
           format: "umd",
-          name: "gw.config",
+          name: "gw.http",
         },
         { file: `dist/system/${entryName}.js`, format: "system" },
       ],
-      plugins: [
-        typescript({
-          // tsconfigDefaults: defaultCfg,
-          // tsconfig: undefined,
-          cacheRoot: ".rollupcache",
-          tsconfigOverride: {
-            compilerOptions: {
-              module: "es2015",
-              target: "es5",
-            },
-            exclude: ["src/internal.d.ts"],
-            include: ["src"],
-          },
-        }),
-      ],
+      plugins: [ ts('es5'), ],
     },
   ],
 );
