@@ -291,10 +291,6 @@ export declare enum RequestMethod {
 	 */
 	POST = "post",
 	/**
-	 * @link https://github.com/symfony/http-foundation/blob/master/Request.php
-	 */
-	PURGE = "purge",
-	/**
 	 * The PUT method replaces all current representations of the target resource with the request payload.
 	 */
 	PUT = "put",
@@ -306,7 +302,7 @@ export declare enum RequestMethod {
 /**
  * Full list of Request Methods
  */
-export declare const RequestMethods: RequestMethod[];
+export declare type RequestMethods = 'all' | 'connect' | 'delete' | 'get' | 'head' | 'options' | 'patch' | 'post' | 'put' | 'trace';
 /**
  * @link https://github.com/nestjs/nest/blob/master/packages/common/exceptions/http.exception.ts
  */

@@ -268,7 +268,7 @@ export enum ResponseMessage {
  * List of Request Methods as described on MDN Documentation
  * @link https://developer.mozilla.org/en-US/docs/Web/HTTP/Methods
  */
-export enum RequestMethod {
+export enum RequestMethods {
   ALL = 'all',
   /**
    * The CONNECT method establishes a tunnel to the server identified by the target  resource.
@@ -299,10 +299,7 @@ export enum RequestMethod {
    * effects on the server.
    */
   POST = 'post',
-  /**
-   * @link https://github.com/symfony/http-foundation/blob/master/Request.php
-   */
-  PURGE = 'purge',
+
   /**
    * The PUT method replaces all current representations of the target resource with the request payload.
    */
@@ -316,14 +313,14 @@ export enum RequestMethod {
 /**
  * Full list of Request Methods
  */
-export const RequestMethods: RequestMethod[] = [
-  RequestMethod.DELETE,
-  RequestMethod.GET,
-  RequestMethod.HEAD,
-  RequestMethod.OPTIONS,
-  RequestMethod.PATCH,
-  RequestMethod.POST,
-  RequestMethod.PURGE,
-  RequestMethod.PUT,
-  RequestMethod.TRACE,
-]
+export type RequestMethod =
+  | 'all'
+  | 'connect'
+  | 'delete'
+  | 'get'
+  | 'head'
+  | 'options'
+  | 'patch'
+  | 'post'
+  | 'put'
+  | 'trace'

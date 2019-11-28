@@ -292,10 +292,6 @@ System.register([], function (exports) {
            */
           RequestMethod["POST"] = "post";
           /**
-           * @link https://github.com/symfony/http-foundation/blob/master/Request.php
-           */
-          RequestMethod["PURGE"] = "purge";
-          /**
            * The PUT method replaces all current representations of the target resource with the request payload.
            */
           RequestMethod["PUT"] = "put";
@@ -304,20 +300,6 @@ System.register([], function (exports) {
            */
           RequestMethod["TRACE"] = "trace";
       })(RequestMethod || (RequestMethod = exports('RequestMethod', {})));
-      /**
-       * Full list of Request Methods
-       */
-      var RequestMethods = exports('RequestMethods', [
-          RequestMethod.DELETE,
-          RequestMethod.GET,
-          RequestMethod.HEAD,
-          RequestMethod.OPTIONS,
-          RequestMethod.PATCH,
-          RequestMethod.POST,
-          RequestMethod.PURGE,
-          RequestMethod.PUT,
-          RequestMethod.TRACE,
-      ]);
 
       /*! *****************************************************************************
       Copyright (c) Microsoft Corporation. All rights reserved.

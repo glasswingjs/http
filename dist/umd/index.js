@@ -269,10 +269,6 @@
        */
       RequestMethod["POST"] = "post";
       /**
-       * @link https://github.com/symfony/http-foundation/blob/master/Request.php
-       */
-      RequestMethod["PURGE"] = "purge";
-      /**
        * The PUT method replaces all current representations of the target resource with the request payload.
        */
       RequestMethod["PUT"] = "put";
@@ -281,20 +277,6 @@
        */
       RequestMethod["TRACE"] = "trace";
   })(exports.RequestMethod || (exports.RequestMethod = {}));
-  /**
-   * Full list of Request Methods
-   */
-  var RequestMethods = [
-      exports.RequestMethod.DELETE,
-      exports.RequestMethod.GET,
-      exports.RequestMethod.HEAD,
-      exports.RequestMethod.OPTIONS,
-      exports.RequestMethod.PATCH,
-      exports.RequestMethod.POST,
-      exports.RequestMethod.PURGE,
-      exports.RequestMethod.PUT,
-      exports.RequestMethod.TRACE,
-  ];
 
   /*! *****************************************************************************
   Copyright (c) Microsoft Corporation. All rights reserved.
@@ -779,7 +761,6 @@
   exports.ProxyAuthenticationRequiredException = ProxyAuthenticationRequiredException;
   exports.RangeNotSatisfiableException = RangeNotSatisfiableException;
   exports.RequestHeaderFieldsTooLargeException = RequestHeaderFieldsTooLargeException;
-  exports.RequestMethods = RequestMethods;
   exports.RequestTimeoutException = RequestTimeoutException;
   exports.ServiceUnavailableException = ServiceUnavailableException;
   exports.TooEarlyException = TooEarlyException;

@@ -280,10 +280,6 @@ var RequestMethod;
      */
     RequestMethod["POST"] = "post";
     /**
-     * @link https://github.com/symfony/http-foundation/blob/master/Request.php
-     */
-    RequestMethod["PURGE"] = "purge";
-    /**
      * The PUT method replaces all current representations of the target resource with the request payload.
      */
     RequestMethod["PUT"] = "put";
@@ -292,20 +288,6 @@ var RequestMethod;
      */
     RequestMethod["TRACE"] = "trace";
 })(RequestMethod || (RequestMethod = {}));
-/**
- * Full list of Request Methods
- */
-const RequestMethods = [
-    RequestMethod.DELETE,
-    RequestMethod.GET,
-    RequestMethod.HEAD,
-    RequestMethod.OPTIONS,
-    RequestMethod.PATCH,
-    RequestMethod.POST,
-    RequestMethod.PURGE,
-    RequestMethod.PUT,
-    RequestMethod.TRACE,
-];
 
 /**
  * @link https://github.com/nestjs/nest/blob/master/packages/common/exceptions/http.exception.ts
@@ -628,4 +610,4 @@ class NetworkAuthenticationRequiredException extends HttpException {
     }
 }
 
-export { BadGatewayException, ConflictException, ExpectationFailedException, ForbiddenException, GatewayTimeoutException, GoneException, HTTPVersionNotSupportedException, HttpException, ImateapotException, InsufficientStorageException, InternalServerErrorException, LengthRequiredException, LoopDetectedException, MethodNotAllowedException, NetworkAuthenticationRequiredException, NotAcceptableException, NotFoundException, NotImplementedException, PayloadTooLargeException, PaymentRequiredException, PreconditionFailedException, PreconditionRequiredException, ProxyAuthenticationRequiredException, RangeNotSatisfiableException, RequestHeader, RequestHeaderFieldsTooLargeException, RequestMethod, RequestMethods, RequestTimeoutException, ResponseCode, ResponseMessage, ServiceUnavailableException, TooEarlyException, TooManyRequestsException, URITooLongException, UnauthorizedException, UnavailableForLegalReasonsException, UnprocessableEntityException, UnsupportedMediaTypeException, UpgradeRequiredException, VariantAlsoNegotiatesException };
+export { BadGatewayException, ConflictException, ExpectationFailedException, ForbiddenException, GatewayTimeoutException, GoneException, HTTPVersionNotSupportedException, HttpException, ImateapotException, InsufficientStorageException, InternalServerErrorException, LengthRequiredException, LoopDetectedException, MethodNotAllowedException, NetworkAuthenticationRequiredException, NotAcceptableException, NotFoundException, NotImplementedException, PayloadTooLargeException, PaymentRequiredException, PreconditionFailedException, PreconditionRequiredException, ProxyAuthenticationRequiredException, RangeNotSatisfiableException, RequestHeader, RequestHeaderFieldsTooLargeException, RequestMethod, RequestTimeoutException, ResponseCode, ResponseMessage, ServiceUnavailableException, TooEarlyException, TooManyRequestsException, URITooLongException, UnauthorizedException, UnavailableForLegalReasonsException, UnprocessableEntityException, UnsupportedMediaTypeException, UpgradeRequiredException, VariantAlsoNegotiatesException };
