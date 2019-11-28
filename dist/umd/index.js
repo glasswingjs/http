@@ -237,46 +237,46 @@
       ResponseMessage["NOT_EXTENDED"] = "510 Not Extended";
       ResponseMessage["NETWORK_AUTHENTICATION_REQUIRED"] = "511 Network Authentication Required";
   })(exports.ResponseMessage || (exports.ResponseMessage = {}));
-  (function (RequestMethod) {
-      RequestMethod["ALL"] = "all";
+  (function (RequestMethods) {
+      RequestMethods["ALL"] = "all";
       /**
        * The CONNECT method establishes a tunnel to the server identified by the target  resource.
        */
-      RequestMethod["CONNECT"] = "connect";
+      RequestMethods["CONNECT"] = "connect";
       /**
        * The DELETE method deletes the specified resource.
        */
-      RequestMethod["DELETE"] = "delete";
+      RequestMethods["DELETE"] = "delete";
       /**
        * The GET method requests a representation of the specified resource. Requests using GET should only retrieve data.
        */
-      RequestMethod["GET"] = "get";
+      RequestMethods["GET"] = "get";
       /**
        * The HEAD method asks for a response identical to that of a GET request, but without the response body.
        */
-      RequestMethod["HEAD"] = "head";
+      RequestMethods["HEAD"] = "head";
       /**
        * The OPTIONS method is used to describe the communication options for the target resource.
        */
-      RequestMethod["OPTIONS"] = "options";
+      RequestMethods["OPTIONS"] = "options";
       /**
        * The PATCH method is used to apply partial modifications to a resource.
        */
-      RequestMethod["PATCH"] = "patch";
+      RequestMethods["PATCH"] = "patch";
       /**
        * The POST method is used to submit an entity to the specified resource, often causing a change in state or side
        * effects on the server.
        */
-      RequestMethod["POST"] = "post";
+      RequestMethods["POST"] = "post";
       /**
        * The PUT method replaces all current representations of the target resource with the request payload.
        */
-      RequestMethod["PUT"] = "put";
+      RequestMethods["PUT"] = "put";
       /**
        * The TRACE method performs a message loop-back test along the path to the target resource.
        */
-      RequestMethod["TRACE"] = "trace";
-  })(exports.RequestMethod || (exports.RequestMethod = {}));
+      RequestMethods["TRACE"] = "trace";
+  })(exports.RequestMethods || (exports.RequestMethods = {}));
 
   /*! *****************************************************************************
   Copyright (c) Microsoft Corporation. All rights reserved.
