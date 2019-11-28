@@ -259,7 +259,7 @@ export declare enum ResponseMessage {
  * List of Request Methods as described on MDN Documentation
  * @link https://developer.mozilla.org/en-US/docs/Web/HTTP/Methods
  */
-export declare enum RequestMethods {
+export declare enum RequestMethod {
 	ALL = "all",
 	/**
 	 * The CONNECT method establishes a tunnel to the server identified by the target  resource.
@@ -299,10 +299,6 @@ export declare enum RequestMethods {
 	 */
 	TRACE = "trace"
 }
-/**
- * Full list of Request Methods
- */
-export declare type RequestMethod = 'all' | 'connect' | 'delete' | 'get' | 'head' | 'options' | 'patch' | 'post' | 'put' | 'trace';
 /**
  * @link https://github.com/nestjs/nest/blob/master/packages/common/exceptions/http.exception.ts
  */
