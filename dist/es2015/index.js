@@ -1,3 +1,11 @@
+import 'reflect-metadata';
+import SetCookieParser from 'set-cookie-parser';
+import { parse } from 'url';
+import { wrapPropertyDescriptorHandler } from '@glasswing/common';
+import YAML from 'yaml';
+import { IncomingMessage, ServerResponse } from 'http';
+import { Socket } from 'net';
+
 /**
  * List of HTTP headers, as described on MDN Documentation
  * @link https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers
@@ -302,6 +310,229 @@ var RequestMethod;
 //   | 'post'
 //   | 'put'
 //   | 'trace'
+
+/*! *****************************************************************************
+Copyright (c) Microsoft Corporation. All rights reserved.
+Licensed under the Apache License, Version 2.0 (the "License"); you may not use
+this file except in compliance with the License. You may obtain a copy of the
+License at http://www.apache.org/licenses/LICENSE-2.0
+
+THIS CODE IS PROVIDED ON AN *AS IS* BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+KIND, EITHER EXPRESS OR IMPLIED, INCLUDING WITHOUT LIMITATION ANY IMPLIED
+WARRANTIES OR CONDITIONS OF TITLE, FITNESS FOR A PARTICULAR PURPOSE,
+MERCHANTABLITY OR NON-INFRINGEMENT.
+
+See the Apache Version 2.0 License for specific language governing permissions
+and limitations under the License.
+***************************************************************************** */
+
+function __awaiter(thisArg, _arguments, P, generator) {
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : new P(function (resolve) { resolve(result.value); }).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+}
+
+/******************************************************************************
+ *
+ * Helpers
+ *
+ *****************************************************************************/
+/**
+ * @Body(key:? string, decoder?: RequestBodyDecoder)
+ *
+ * If key is not mentioned or `null`, will return the entire decoded body.
+ * If key is mentioned and not null, will return a certain property of the body, defined by the key's value.
+ */
+const Body = (key, decoder = JSON.parse) => {
+    return (target, methodKey, parameterIndex) => {
+        const mapper = (data) => (key ? data[key] : data);
+        appendParameterMapper(target, methodKey, parameterIndex, (req) => readRequestBody(req)
+            .then(decoder)
+            .then(mapper));
+    };
+};
+/**
+ * Cookie(key?: string, value?: any)
+ * If key is not mentioned or `null`, will return the entire cookies object.
+ * If key is mentioned and not null, will return a certain property of the cookies object, defined by the key's
+ * value.
+ */
+const Cookie = (key, value) => {
+    return (target, methodKey, parameterIndex) => {
+        appendParameterMapper(target, methodKey, parameterIndex, (req) => {
+            const cookiesString = (req.headers || {}).cookie || '';
+            // const cookiesArray: any[] = cookiesString
+            //   .split(';')
+            //   .map((cookie: string) => {
+            //     var parts: string[] = cookie.split('=');
+            //     return { [(parts.shift()||'').trim()]: decodeURI(parts.join('=')), }
+            //   })
+            // const cookies: any = Object.assign({}, ...cookiesArray)
+            const cookies = SetCookieParser.parse(cookiesString.split('; '), {
+                decodeValues: true,
+                map: true,
+            });
+            return key ? cookies[key] : cookies;
+        }, 'request');
+    };
+};
+/**
+ * Header(key?: string)
+ * If key is not mentioned or `null`, will return the entire headers object.
+ * If key is mentioned and not null, will return a certain property of the headers object, defined by the key's
+ * value.
+ */
+const Header = (key) => {
+    return (target, methodKey, parameterIndex) => {
+        appendParameterMapper(target, methodKey, parameterIndex, (req) => {
+            return key ? req.headers[key] : req.headers;
+        }, 'request');
+    };
+};
+/**
+ * @Ip()
+ */
+const Ip = () => {
+    return (target, methodKey, parameterIndex) => {
+        appendParameterMapper(target, methodKey, parameterIndex, (req) => req.headers[RequestHeader.X_FORWARDED_FOR.toLowerCase()]);
+    };
+};
+/**
+ * @Param(key:? string)
+ * If key is not mentioned or `null`, will return the entire decoded parameters object.
+ * If key is mentioned and not null, will return a certain property of the parameters object, defined by the key's
+ * value.
+ */
+const Param = (key) => {
+    return (target, methodKey, parameterIndex) => {
+        appendParameterMapper(target, methodKey, parameterIndex, (params) => (key ? params[key] : params), 'params');
+    };
+};
+/**
+ * @Query(key:? string)
+ * If key is not mentioned or `null`, will return the entire query object.
+ * If key is mentioned and not null, will return a certain property of the query object, defined by the key's value.
+ */
+const Query = (key) => {
+    return (target, methodKey, parameterIndex) => {
+        appendParameterMapper(target, methodKey, parameterIndex, (req) => {
+            const queryData = parse(req.url || '', true).query;
+            return key ? queryData[key] : queryData;
+        });
+    };
+};
+/**
+ * @Req()
+ */
+const Req = () => {
+    return (target, methodKey, parameterIndex) => {
+        appendParameterMapper(target, methodKey, parameterIndex, (req) => req);
+    };
+};
+/**
+ * @Res()
+ */
+const Res = () => {
+    return (target, methodKey, parameterIndex) => {
+        appendParameterMapper(target, methodKey, parameterIndex, (res) => res, 'response');
+    };
+};
+// /**
+//  * @Redirect(url: string, code: number = 301)
+//  */
+/******************************************************************************
+ *
+ * Helpers
+ *
+ *****************************************************************************/
+/**
+ *
+ * @param methodName
+ */
+const methodArgumentsDescriptor = (methodName) => `${typeof methodName === 'string' ? methodName : methodName.toString()}__Arguments`;
+/**
+ *
+ * @link https://nodejs.org/es/docs/guides/anatomy-of-an-http-transaction/
+ * @param req
+ */
+const readRequestBody = (req) => __awaiter(void 0, void 0, void 0, function* () {
+    return new Promise((resolve, reject) => {
+        const body = [];
+        req
+            .on('error', err => reject(err))
+            .on('data', chunk => body.push(chunk))
+            .on('end', () => {
+            const str = Buffer.concat(body).toString();
+            resolve(str);
+        });
+    });
+});
+/**
+ *
+ * @param target
+ * @param methodName
+ * @param parameterIndex
+ * @param callable
+ * @param source
+ */
+const appendParameterMapper = (target, methodName, parameterIndex, callable, source = 'request') => {
+    // calculate method (name) descriptor
+    const methodDescriptor = methodArgumentsDescriptor(methodName);
+    // can't set ParameterDescriptor[] type due to creation of an array of zeros
+    const metadata = Array(parameterIndex + 1);
+    // copy already discovered parameters into the new array
+    if (Reflect.hasMetadata(methodDescriptor, target)) {
+        const oldMetadata = Reflect.getMetadata(methodDescriptor, target) || [];
+        oldMetadata.forEach((data, index) => {
+            metadata[index] = data;
+        });
+    }
+    // add the new discovered parameter descriptor to the array
+    metadata[parameterIndex] = {
+        callable,
+        source,
+    };
+    // set the data back
+    Reflect.defineMetadata(methodDescriptor, metadata, target);
+};
+
+/**
+ * Comment
+ *
+ * @returns {MethodDecorator}
+ */
+const RespondWith = (bodyEncoder = (data) => data, ...other) => (target, propertyKey, descriptor) => {
+    const handler = (oldMethod) => {
+        return (...args) => {
+            const result = oldMethod(...args);
+            return result instanceof Promise
+                ? result.then((data) => bodyEncoder(data, ...other))
+                : bodyEncoder(result, ...other);
+        };
+    };
+    return wrapPropertyDescriptorHandler(descriptor, handler);
+};
+/**
+ * Wrap controller respond with raw data
+ *
+ * @param args
+ */
+const RespondWithRaw = (...args) => RespondWith((data) => data, ...args);
+/**
+ * Wrap controller action to encode response into a JSON string
+ *
+ * @param args
+ */
+const RespondWithJson = (...args) => RespondWith(JSON.stringify, ...args);
+/**
+ * Wrap controller action to encode response into a YAML string
+ *
+ * @param args
+ */
+const RespondWithYaml = (...args) => RespondWith(YAML.stringify, ...args);
 
 /**
  * @link https://github.com/nestjs/nest/blob/master/packages/common/exceptions/http.exception.ts
@@ -624,4 +855,57 @@ class NetworkAuthenticationRequiredException extends HttpException {
     }
 }
 
-export { BadGatewayException, ConflictException, ExpectationFailedException, ForbiddenException, GatewayTimeoutException, GoneException, HTTPVersionNotSupportedException, HttpException, ImateapotException, InsufficientStorageException, InternalServerErrorException, LengthRequiredException, LoopDetectedException, MethodNotAllowedException, NetworkAuthenticationRequiredException, NotAcceptableException, NotFoundException, NotImplementedException, PayloadTooLargeException, PaymentRequiredException, PreconditionFailedException, PreconditionRequiredException, ProxyAuthenticationRequiredException, RangeNotSatisfiableException, RequestHeader, RequestHeaderFieldsTooLargeException, RequestMethod, RequestTimeoutException, ResponseCode, ResponseMessage, ServiceUnavailableException, TooEarlyException, TooManyRequestsException, URITooLongException, UnauthorizedException, UnavailableForLegalReasonsException, UnprocessableEntityException, UnsupportedMediaTypeException, UpgradeRequiredException, VariantAlsoNegotiatesException };
+class MockRequest extends IncomingMessage {
+    constructor(mock, body) {
+        super(new Socket());
+        this.headers = mock.headers;
+        this.method = mock.method;
+        this.url = mock.url;
+        if (body) {
+            this.push(body);
+            this.push(null);
+        }
+    }
+}
+const mockReq = (data) => new MockRequest({
+    complete: true,
+    connection: new Socket(),
+    headers: {
+        [RequestHeader.COOKIE.toLowerCase()]: 'test=testValue; test2=testValue2',
+        [RequestHeader.X_FORWARDED_FOR.toLowerCase()]: '8.8.8.8',
+        test: 'testValue',
+        test2: 'testValue2',
+    },
+    httpVersion: '1.1',
+    httpVersionMajor: 1,
+    httpVersionMinor: 1,
+    method: 'GET',
+    url: '/test?test=testValue&test2=testValue2',
+}, JSON.stringify(data));
+const mockReqYaml = (data) => new MockRequest({
+    complete: true,
+    connection: new Socket(),
+    headers: {
+        [RequestHeader.COOKIE.toLowerCase()]: 'test=testValue; test2=testValue2',
+        [RequestHeader.X_FORWARDED_FOR.toLowerCase()]: '8.8.8.8',
+        test: 'testValue',
+        test2: 'testValue2',
+    },
+    httpVersion: '1.1',
+    httpVersionMajor: 1,
+    httpVersionMinor: 1,
+    method: 'GET',
+    url: '/test?test=testValue&test2=testValue2',
+}, YAML.stringify(data));
+
+class MockResponse extends ServerResponse {
+    constructor(req, mock) {
+        super(req);
+        this.statusCode = mock ? mock.statusCode : ResponseCode.OK;
+        this.statusMessage = mock ? mock.statusMessage : ResponseMessage.OK;
+        this.writableFinished = mock ? mock.writableFinished : true;
+    }
+}
+const mockRes = (data) => new MockResponse(mockReq(data));
+
+export { BadGatewayException, Body, ConflictException, Cookie, ExpectationFailedException, ForbiddenException, GatewayTimeoutException, GoneException, HTTPVersionNotSupportedException, Header, HttpException, ImateapotException, InsufficientStorageException, InternalServerErrorException, Ip, LengthRequiredException, LoopDetectedException, MethodNotAllowedException, MockRequest, MockResponse, NetworkAuthenticationRequiredException, NotAcceptableException, NotFoundException, NotImplementedException, Param, PayloadTooLargeException, PaymentRequiredException, PreconditionFailedException, PreconditionRequiredException, ProxyAuthenticationRequiredException, Query, RangeNotSatisfiableException, Req, RequestHeader, RequestHeaderFieldsTooLargeException, RequestMethod, RequestTimeoutException, Res, RespondWith, RespondWithJson, RespondWithRaw, RespondWithYaml, ResponseCode, ResponseMessage, ServiceUnavailableException, TooEarlyException, TooManyRequestsException, URITooLongException, UnauthorizedException, UnavailableForLegalReasonsException, UnprocessableEntityException, UnsupportedMediaTypeException, UpgradeRequiredException, VariantAlsoNegotiatesException, methodArgumentsDescriptor, mockReq, mockReqYaml, mockRes };

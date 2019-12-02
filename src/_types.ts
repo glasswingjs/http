@@ -19,6 +19,19 @@ export type RequestBodyDecoder = (val: string) => any
 
 export type ResponseBodyEncoder = (val: any, ...args: any[]) => any
 
+export type ArgumentSource = 'request' | 'response' | 'params'
+
+export type ArgumentMapperCallable = (entity: any) => any
+
+export interface BodyArgumentMapperCallable extends ArgumentMapperCallable {
+  (req: Request): Promise<any>
+}
+
+export interface ParameterDescriptor {
+  callable: ArgumentMapperCallable
+  source: ArgumentSource
+}
+
 /**
  * List of HTTP headers, as described on MDN Documentation
  * @link https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers

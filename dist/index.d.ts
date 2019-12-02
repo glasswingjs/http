@@ -1,7 +1,8 @@
 /// <reference types="node" />
 
-import { IncomingMessage, ServerResponse } from 'http';
+import { IncomingHttpHeaders, IncomingMessage, ServerResponse } from 'http';
 import { Http2ServerRequest, Http2ServerResponse } from 'http2';
+import { Socket } from 'net';
 
 export interface HttpExceptionBody {
 	message?: object | string;
@@ -13,6 +14,15 @@ export declare type Response = ServerResponse | Http2ServerResponse;
 export declare type RequestHandler = (req: Request, res: Response, params: any) => void;
 export declare type RequestBodyDecoder = (val: string) => any;
 export declare type ResponseBodyEncoder = (val: any, ...args: any[]) => any;
+export declare type ArgumentSource = 'request' | 'response' | 'params';
+export declare type ArgumentMapperCallable = (entity: any) => any;
+export interface BodyArgumentMapperCallable extends ArgumentMapperCallable {
+	(req: Request): Promise<any>;
+}
+export interface ParameterDescriptor {
+	callable: ArgumentMapperCallable;
+	source: ArgumentSource;
+}
 /**
  * List of HTTP headers, as described on MDN Documentation
  * @link https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers
@@ -299,6 +309,91 @@ export declare enum RequestMethod {
 	 */
 	TRACE = "trace"
 }
+/******************************************************************************
+ *
+ * Helpers
+ *
+ *****************************************************************************/
+/**
+ * @Body(key:? string, decoder?: RequestBodyDecoder)
+ *
+ * If key is not mentioned or `null`, will return the entire decoded body.
+ * If key is mentioned and not null, will return a certain property of the body, defined by the key's value.
+ */
+export declare const Body: (key?: string | undefined, decoder?: RequestBodyDecoder) => ParameterDecorator;
+/**
+ * Cookie(key?: string, value?: any)
+ * If key is not mentioned or `null`, will return the entire cookies object.
+ * If key is mentioned and not null, will return a certain property of the cookies object, defined by the key's
+ * value.
+ */
+export declare const Cookie: (key?: string | undefined, value?: any) => ParameterDecorator;
+/**
+ * Header(key?: string)
+ * If key is not mentioned or `null`, will return the entire headers object.
+ * If key is mentioned and not null, will return a certain property of the headers object, defined by the key's
+ * value.
+ */
+export declare const Header: (key?: string | undefined) => ParameterDecorator;
+/**
+ * @Ip()
+ */
+export declare const Ip: () => ParameterDecorator;
+/**
+ * @Param(key:? string)
+ * If key is not mentioned or `null`, will return the entire decoded parameters object.
+ * If key is mentioned and not null, will return a certain property of the parameters object, defined by the key's
+ * value.
+ */
+export declare const Param: (key?: string | undefined) => ParameterDecorator;
+/**
+ * @Query(key:? string)
+ * If key is not mentioned or `null`, will return the entire query object.
+ * If key is mentioned and not null, will return a certain property of the query object, defined by the key's value.
+ */
+export declare const Query: (key?: string | undefined) => ParameterDecorator;
+/**
+ * @Req()
+ */
+export declare const Req: () => ParameterDecorator;
+/**
+ * @Res()
+ */
+export declare const Res: () => ParameterDecorator;
+/******************************************************************************
+ *
+ * Helpers
+ *
+ *****************************************************************************/
+/**
+ *
+ * @param methodName
+ */
+export declare const methodArgumentsDescriptor: (methodName: string | symbol) => string;
+/**
+ * Comment
+ *
+ * @returns {MethodDecorator}
+ */
+export declare const RespondWith: (bodyEncoder?: ResponseBodyEncoder, ...other: any[]) => MethodDecorator;
+/**
+ * Wrap controller respond with raw data
+ *
+ * @param args
+ */
+export declare const RespondWithRaw: (...args: any[]) => MethodDecorator;
+/**
+ * Wrap controller action to encode response into a JSON string
+ *
+ * @param args
+ */
+export declare const RespondWithJson: (...args: any[]) => MethodDecorator;
+/**
+ * Wrap controller action to encode response into a YAML string
+ *
+ * @param args
+ */
+export declare const RespondWithYaml: (...args: any[]) => MethodDecorator;
 /**
  * @link https://github.com/nestjs/nest/blob/master/packages/common/exceptions/http.exception.ts
  */
@@ -529,5 +624,29 @@ export declare class LoopDetectedException extends HttpException {
 export declare class NetworkAuthenticationRequiredException extends HttpException {
 	constructor(message: string | object, error?: string);
 }
+export interface MockRequestOptions {
+	complete: boolean;
+	connection: Socket;
+	headers: IncomingHttpHeaders;
+	httpVersion: string;
+	httpVersionMajor: number;
+	httpVersionMinor: number;
+	method?: string;
+	url?: string;
+}
+export declare class MockRequest extends IncomingMessage {
+	constructor(mock: MockRequestOptions, body?: string);
+}
+export declare const mockReq: (data: object) => Request;
+export declare const mockReqYaml: (data: object) => Request;
+export interface MockResponseOptions {
+	statusCode: number;
+	statusMessage: string;
+	writableFinished: boolean;
+}
+export declare class MockResponse extends ServerResponse {
+	constructor(req: IncomingMessage, mock?: MockResponseOptions);
+}
+export declare const mockRes: (data: object) => Response;
 
 export {};

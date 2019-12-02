@@ -1,8 +1,11 @@
 (function (global, factory) {
-  typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports) :
-  typeof define === 'function' && define.amd ? define(['exports'], factory) :
-  (global = global || self, factory((global.gw = global.gw || {}, global.gw.http = {})));
-}(this, (function (exports) { 'use strict';
+  typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports, require('reflect-metadata'), require('set-cookie-parser'), require('url'), require('@glasswing/common'), require('yaml'), require('http'), require('net')) :
+  typeof define === 'function' && define.amd ? define(['exports', 'reflect-metadata', 'set-cookie-parser', 'url', '@glasswing/common', 'yaml', 'http', 'net'], factory) :
+  (global = global || self, factory((global.gw = global.gw || {}, global.gw.http = {}), null, global.SetCookieParser, global.url, global.common, global.YAML, global.http, global.net));
+}(this, (function (exports, reflectMetadata, SetCookieParser, url, common, YAML, http, net) { 'use strict';
+
+  SetCookieParser = SetCookieParser && SetCookieParser.hasOwnProperty('default') ? SetCookieParser['default'] : SetCookieParser;
+  YAML = YAML && YAML.hasOwnProperty('default') ? YAML['default'] : YAML;
 
   /**
    * List of HTTP headers, as described on MDN Documentation
@@ -291,6 +294,229 @@
   //   | 'post'
   //   | 'put'
   //   | 'trace'
+
+  /*! *****************************************************************************
+  Copyright (c) Microsoft Corporation. All rights reserved.
+  Licensed under the Apache License, Version 2.0 (the "License"); you may not use
+  this file except in compliance with the License. You may obtain a copy of the
+  License at http://www.apache.org/licenses/LICENSE-2.0
+
+  THIS CODE IS PROVIDED ON AN *AS IS* BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+  KIND, EITHER EXPRESS OR IMPLIED, INCLUDING WITHOUT LIMITATION ANY IMPLIED
+  WARRANTIES OR CONDITIONS OF TITLE, FITNESS FOR A PARTICULAR PURPOSE,
+  MERCHANTABLITY OR NON-INFRINGEMENT.
+
+  See the Apache Version 2.0 License for specific language governing permissions
+  and limitations under the License.
+  ***************************************************************************** */
+
+  function __awaiter(thisArg, _arguments, P, generator) {
+      return new (P || (P = Promise))(function (resolve, reject) {
+          function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+          function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+          function step(result) { result.done ? resolve(result.value) : new P(function (resolve) { resolve(result.value); }).then(fulfilled, rejected); }
+          step((generator = generator.apply(thisArg, _arguments || [])).next());
+      });
+  }
+
+  /******************************************************************************
+   *
+   * Helpers
+   *
+   *****************************************************************************/
+  /**
+   * @Body(key:? string, decoder?: RequestBodyDecoder)
+   *
+   * If key is not mentioned or `null`, will return the entire decoded body.
+   * If key is mentioned and not null, will return a certain property of the body, defined by the key's value.
+   */
+  const Body = (key, decoder = JSON.parse) => {
+      return (target, methodKey, parameterIndex) => {
+          const mapper = (data) => (key ? data[key] : data);
+          appendParameterMapper(target, methodKey, parameterIndex, (req) => readRequestBody(req)
+              .then(decoder)
+              .then(mapper));
+      };
+  };
+  /**
+   * Cookie(key?: string, value?: any)
+   * If key is not mentioned or `null`, will return the entire cookies object.
+   * If key is mentioned and not null, will return a certain property of the cookies object, defined by the key's
+   * value.
+   */
+  const Cookie = (key, value) => {
+      return (target, methodKey, parameterIndex) => {
+          appendParameterMapper(target, methodKey, parameterIndex, (req) => {
+              const cookiesString = (req.headers || {}).cookie || '';
+              // const cookiesArray: any[] = cookiesString
+              //   .split(';')
+              //   .map((cookie: string) => {
+              //     var parts: string[] = cookie.split('=');
+              //     return { [(parts.shift()||'').trim()]: decodeURI(parts.join('=')), }
+              //   })
+              // const cookies: any = Object.assign({}, ...cookiesArray)
+              const cookies = SetCookieParser.parse(cookiesString.split('; '), {
+                  decodeValues: true,
+                  map: true,
+              });
+              return key ? cookies[key] : cookies;
+          }, 'request');
+      };
+  };
+  /**
+   * Header(key?: string)
+   * If key is not mentioned or `null`, will return the entire headers object.
+   * If key is mentioned and not null, will return a certain property of the headers object, defined by the key's
+   * value.
+   */
+  const Header = (key) => {
+      return (target, methodKey, parameterIndex) => {
+          appendParameterMapper(target, methodKey, parameterIndex, (req) => {
+              return key ? req.headers[key] : req.headers;
+          }, 'request');
+      };
+  };
+  /**
+   * @Ip()
+   */
+  const Ip = () => {
+      return (target, methodKey, parameterIndex) => {
+          appendParameterMapper(target, methodKey, parameterIndex, (req) => req.headers[exports.RequestHeader.X_FORWARDED_FOR.toLowerCase()]);
+      };
+  };
+  /**
+   * @Param(key:? string)
+   * If key is not mentioned or `null`, will return the entire decoded parameters object.
+   * If key is mentioned and not null, will return a certain property of the parameters object, defined by the key's
+   * value.
+   */
+  const Param = (key) => {
+      return (target, methodKey, parameterIndex) => {
+          appendParameterMapper(target, methodKey, parameterIndex, (params) => (key ? params[key] : params), 'params');
+      };
+  };
+  /**
+   * @Query(key:? string)
+   * If key is not mentioned or `null`, will return the entire query object.
+   * If key is mentioned and not null, will return a certain property of the query object, defined by the key's value.
+   */
+  const Query = (key) => {
+      return (target, methodKey, parameterIndex) => {
+          appendParameterMapper(target, methodKey, parameterIndex, (req) => {
+              const queryData = url.parse(req.url || '', true).query;
+              return key ? queryData[key] : queryData;
+          });
+      };
+  };
+  /**
+   * @Req()
+   */
+  const Req = () => {
+      return (target, methodKey, parameterIndex) => {
+          appendParameterMapper(target, methodKey, parameterIndex, (req) => req);
+      };
+  };
+  /**
+   * @Res()
+   */
+  const Res = () => {
+      return (target, methodKey, parameterIndex) => {
+          appendParameterMapper(target, methodKey, parameterIndex, (res) => res, 'response');
+      };
+  };
+  // /**
+  //  * @Redirect(url: string, code: number = 301)
+  //  */
+  /******************************************************************************
+   *
+   * Helpers
+   *
+   *****************************************************************************/
+  /**
+   *
+   * @param methodName
+   */
+  const methodArgumentsDescriptor = (methodName) => `${typeof methodName === 'string' ? methodName : methodName.toString()}__Arguments`;
+  /**
+   *
+   * @link https://nodejs.org/es/docs/guides/anatomy-of-an-http-transaction/
+   * @param req
+   */
+  const readRequestBody = (req) => __awaiter(void 0, void 0, void 0, function* () {
+      return new Promise((resolve, reject) => {
+          const body = [];
+          req
+              .on('error', err => reject(err))
+              .on('data', chunk => body.push(chunk))
+              .on('end', () => {
+              const str = Buffer.concat(body).toString();
+              resolve(str);
+          });
+      });
+  });
+  /**
+   *
+   * @param target
+   * @param methodName
+   * @param parameterIndex
+   * @param callable
+   * @param source
+   */
+  const appendParameterMapper = (target, methodName, parameterIndex, callable, source = 'request') => {
+      // calculate method (name) descriptor
+      const methodDescriptor = methodArgumentsDescriptor(methodName);
+      // can't set ParameterDescriptor[] type due to creation of an array of zeros
+      const metadata = Array(parameterIndex + 1);
+      // copy already discovered parameters into the new array
+      if (Reflect.hasMetadata(methodDescriptor, target)) {
+          const oldMetadata = Reflect.getMetadata(methodDescriptor, target) || [];
+          oldMetadata.forEach((data, index) => {
+              metadata[index] = data;
+          });
+      }
+      // add the new discovered parameter descriptor to the array
+      metadata[parameterIndex] = {
+          callable,
+          source,
+      };
+      // set the data back
+      Reflect.defineMetadata(methodDescriptor, metadata, target);
+  };
+
+  /**
+   * Comment
+   *
+   * @returns {MethodDecorator}
+   */
+  const RespondWith = (bodyEncoder = (data) => data, ...other) => (target, propertyKey, descriptor) => {
+      const handler = (oldMethod) => {
+          return (...args) => {
+              const result = oldMethod(...args);
+              return result instanceof Promise
+                  ? result.then((data) => bodyEncoder(data, ...other))
+                  : bodyEncoder(result, ...other);
+          };
+      };
+      return common.wrapPropertyDescriptorHandler(descriptor, handler);
+  };
+  /**
+   * Wrap controller respond with raw data
+   *
+   * @param args
+   */
+  const RespondWithRaw = (...args) => RespondWith((data) => data, ...args);
+  /**
+   * Wrap controller action to encode response into a JSON string
+   *
+   * @param args
+   */
+  const RespondWithJson = (...args) => RespondWith(JSON.stringify, ...args);
+  /**
+   * Wrap controller action to encode response into a YAML string
+   *
+   * @param args
+   */
+  const RespondWithYaml = (...args) => RespondWith(YAML.stringify, ...args);
 
   /**
    * @link https://github.com/nestjs/nest/blob/master/packages/common/exceptions/http.exception.ts
@@ -613,32 +839,99 @@
       }
   }
 
+  class MockRequest extends http.IncomingMessage {
+      constructor(mock, body) {
+          super(new net.Socket());
+          this.headers = mock.headers;
+          this.method = mock.method;
+          this.url = mock.url;
+          if (body) {
+              this.push(body);
+              this.push(null);
+          }
+      }
+  }
+  const mockReq = (data) => new MockRequest({
+      complete: true,
+      connection: new net.Socket(),
+      headers: {
+          [exports.RequestHeader.COOKIE.toLowerCase()]: 'test=testValue; test2=testValue2',
+          [exports.RequestHeader.X_FORWARDED_FOR.toLowerCase()]: '8.8.8.8',
+          test: 'testValue',
+          test2: 'testValue2',
+      },
+      httpVersion: '1.1',
+      httpVersionMajor: 1,
+      httpVersionMinor: 1,
+      method: 'GET',
+      url: '/test?test=testValue&test2=testValue2',
+  }, JSON.stringify(data));
+  const mockReqYaml = (data) => new MockRequest({
+      complete: true,
+      connection: new net.Socket(),
+      headers: {
+          [exports.RequestHeader.COOKIE.toLowerCase()]: 'test=testValue; test2=testValue2',
+          [exports.RequestHeader.X_FORWARDED_FOR.toLowerCase()]: '8.8.8.8',
+          test: 'testValue',
+          test2: 'testValue2',
+      },
+      httpVersion: '1.1',
+      httpVersionMajor: 1,
+      httpVersionMinor: 1,
+      method: 'GET',
+      url: '/test?test=testValue&test2=testValue2',
+  }, YAML.stringify(data));
+
+  class MockResponse extends http.ServerResponse {
+      constructor(req, mock) {
+          super(req);
+          this.statusCode = mock ? mock.statusCode : exports.ResponseCode.OK;
+          this.statusMessage = mock ? mock.statusMessage : exports.ResponseMessage.OK;
+          this.writableFinished = mock ? mock.writableFinished : true;
+      }
+  }
+  const mockRes = (data) => new MockResponse(mockReq(data));
+
   exports.BadGatewayException = BadGatewayException;
+  exports.Body = Body;
   exports.ConflictException = ConflictException;
+  exports.Cookie = Cookie;
   exports.ExpectationFailedException = ExpectationFailedException;
   exports.ForbiddenException = ForbiddenException;
   exports.GatewayTimeoutException = GatewayTimeoutException;
   exports.GoneException = GoneException;
   exports.HTTPVersionNotSupportedException = HTTPVersionNotSupportedException;
+  exports.Header = Header;
   exports.HttpException = HttpException;
   exports.ImateapotException = ImateapotException;
   exports.InsufficientStorageException = InsufficientStorageException;
   exports.InternalServerErrorException = InternalServerErrorException;
+  exports.Ip = Ip;
   exports.LengthRequiredException = LengthRequiredException;
   exports.LoopDetectedException = LoopDetectedException;
   exports.MethodNotAllowedException = MethodNotAllowedException;
+  exports.MockRequest = MockRequest;
+  exports.MockResponse = MockResponse;
   exports.NetworkAuthenticationRequiredException = NetworkAuthenticationRequiredException;
   exports.NotAcceptableException = NotAcceptableException;
   exports.NotFoundException = NotFoundException;
   exports.NotImplementedException = NotImplementedException;
+  exports.Param = Param;
   exports.PayloadTooLargeException = PayloadTooLargeException;
   exports.PaymentRequiredException = PaymentRequiredException;
   exports.PreconditionFailedException = PreconditionFailedException;
   exports.PreconditionRequiredException = PreconditionRequiredException;
   exports.ProxyAuthenticationRequiredException = ProxyAuthenticationRequiredException;
+  exports.Query = Query;
   exports.RangeNotSatisfiableException = RangeNotSatisfiableException;
+  exports.Req = Req;
   exports.RequestHeaderFieldsTooLargeException = RequestHeaderFieldsTooLargeException;
   exports.RequestTimeoutException = RequestTimeoutException;
+  exports.Res = Res;
+  exports.RespondWith = RespondWith;
+  exports.RespondWithJson = RespondWithJson;
+  exports.RespondWithRaw = RespondWithRaw;
+  exports.RespondWithYaml = RespondWithYaml;
   exports.ServiceUnavailableException = ServiceUnavailableException;
   exports.TooEarlyException = TooEarlyException;
   exports.TooManyRequestsException = TooManyRequestsException;
@@ -649,6 +942,10 @@
   exports.UnsupportedMediaTypeException = UnsupportedMediaTypeException;
   exports.UpgradeRequiredException = UpgradeRequiredException;
   exports.VariantAlsoNegotiatesException = VariantAlsoNegotiatesException;
+  exports.methodArgumentsDescriptor = methodArgumentsDescriptor;
+  exports.mockReq = mockReq;
+  exports.mockReqYaml = mockReqYaml;
+  exports.mockRes = mockRes;
 
   Object.defineProperty(exports, '__esModule', { value: true });
 

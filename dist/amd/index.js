@@ -1,4 +1,7 @@
-define('index', ['exports'], function (exports) { 'use strict';
+define('index', ['exports', 'reflect-metadata', 'set-cookie-parser', 'url', '@glasswing/common', 'yaml', 'http', 'net'], function (exports, reflectMetadata, SetCookieParser, url, common, YAML, http, net) { 'use strict';
+
+  SetCookieParser = SetCookieParser && SetCookieParser.hasOwnProperty('default') ? SetCookieParser['default'] : SetCookieParser;
+  YAML = YAML && YAML.hasOwnProperty('default') ? YAML['default'] : YAML;
 
   /**
    * List of HTTP headers, as described on MDN Documentation
@@ -316,6 +319,296 @@ define('index', ['exports'], function (exports) { 'use strict';
       function __() { this.constructor = d; }
       d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
   }
+
+  function __awaiter(thisArg, _arguments, P, generator) {
+      return new (P || (P = Promise))(function (resolve, reject) {
+          function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+          function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+          function step(result) { result.done ? resolve(result.value) : new P(function (resolve) { resolve(result.value); }).then(fulfilled, rejected); }
+          step((generator = generator.apply(thisArg, _arguments || [])).next());
+      });
+  }
+
+  function __generator(thisArg, body) {
+      var _ = { label: 0, sent: function() { if (t[0] & 1) throw t[1]; return t[1]; }, trys: [], ops: [] }, f, y, t, g;
+      return g = { next: verb(0), "throw": verb(1), "return": verb(2) }, typeof Symbol === "function" && (g[Symbol.iterator] = function() { return this; }), g;
+      function verb(n) { return function (v) { return step([n, v]); }; }
+      function step(op) {
+          if (f) throw new TypeError("Generator is already executing.");
+          while (_) try {
+              if (f = 1, y && (t = op[0] & 2 ? y["return"] : op[0] ? y["throw"] || ((t = y["return"]) && t.call(y), 0) : y.next) && !(t = t.call(y, op[1])).done) return t;
+              if (y = 0, t) op = [op[0] & 2, t.value];
+              switch (op[0]) {
+                  case 0: case 1: t = op; break;
+                  case 4: _.label++; return { value: op[1], done: false };
+                  case 5: _.label++; y = op[1]; op = [0]; continue;
+                  case 7: op = _.ops.pop(); _.trys.pop(); continue;
+                  default:
+                      if (!(t = _.trys, t = t.length > 0 && t[t.length - 1]) && (op[0] === 6 || op[0] === 2)) { _ = 0; continue; }
+                      if (op[0] === 3 && (!t || (op[1] > t[0] && op[1] < t[3]))) { _.label = op[1]; break; }
+                      if (op[0] === 6 && _.label < t[1]) { _.label = t[1]; t = op; break; }
+                      if (t && _.label < t[2]) { _.label = t[2]; _.ops.push(op); break; }
+                      if (t[2]) _.ops.pop();
+                      _.trys.pop(); continue;
+              }
+              op = body.call(thisArg, _);
+          } catch (e) { op = [6, e]; y = 0; } finally { f = t = 0; }
+          if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
+      }
+  }
+
+  function __spreadArrays() {
+      for (var s = 0, i = 0, il = arguments.length; i < il; i++) s += arguments[i].length;
+      for (var r = Array(s), k = 0, i = 0; i < il; i++)
+          for (var a = arguments[i], j = 0, jl = a.length; j < jl; j++, k++)
+              r[k] = a[j];
+      return r;
+  }
+
+  /******************************************************************************
+   *
+   * Helpers
+   *
+   *****************************************************************************/
+  /**
+   * @Body(key:? string, decoder?: RequestBodyDecoder)
+   *
+   * If key is not mentioned or `null`, will return the entire decoded body.
+   * If key is mentioned and not null, will return a certain property of the body, defined by the key's value.
+   */
+  var Body = function (key, decoder) {
+      if (decoder === void 0) { decoder = JSON.parse; }
+      return function (target, methodKey, parameterIndex) {
+          var mapper = function (data) { return (key ? data[key] : data); };
+          appendParameterMapper(target, methodKey, parameterIndex, function (req) {
+              return readRequestBody(req)
+                  .then(decoder)
+                  .then(mapper);
+          });
+      };
+  };
+  /**
+   * Cookie(key?: string, value?: any)
+   * If key is not mentioned or `null`, will return the entire cookies object.
+   * If key is mentioned and not null, will return a certain property of the cookies object, defined by the key's
+   * value.
+   */
+  var Cookie = function (key, value) {
+      return function (target, methodKey, parameterIndex) {
+          appendParameterMapper(target, methodKey, parameterIndex, function (req) {
+              var cookiesString = (req.headers || {}).cookie || '';
+              // const cookiesArray: any[] = cookiesString
+              //   .split(';')
+              //   .map((cookie: string) => {
+              //     var parts: string[] = cookie.split('=');
+              //     return { [(parts.shift()||'').trim()]: decodeURI(parts.join('=')), }
+              //   })
+              // const cookies: any = Object.assign({}, ...cookiesArray)
+              var cookies = SetCookieParser.parse(cookiesString.split('; '), {
+                  decodeValues: true,
+                  map: true,
+              });
+              return key ? cookies[key] : cookies;
+          }, 'request');
+      };
+  };
+  /**
+   * Header(key?: string)
+   * If key is not mentioned or `null`, will return the entire headers object.
+   * If key is mentioned and not null, will return a certain property of the headers object, defined by the key's
+   * value.
+   */
+  var Header = function (key) {
+      return function (target, methodKey, parameterIndex) {
+          appendParameterMapper(target, methodKey, parameterIndex, function (req) {
+              return key ? req.headers[key] : req.headers;
+          }, 'request');
+      };
+  };
+  /**
+   * @Ip()
+   */
+  var Ip = function () {
+      return function (target, methodKey, parameterIndex) {
+          appendParameterMapper(target, methodKey, parameterIndex, function (req) { return req.headers[exports.RequestHeader.X_FORWARDED_FOR.toLowerCase()]; });
+      };
+  };
+  /**
+   * @Param(key:? string)
+   * If key is not mentioned or `null`, will return the entire decoded parameters object.
+   * If key is mentioned and not null, will return a certain property of the parameters object, defined by the key's
+   * value.
+   */
+  var Param = function (key) {
+      return function (target, methodKey, parameterIndex) {
+          appendParameterMapper(target, methodKey, parameterIndex, function (params) { return (key ? params[key] : params); }, 'params');
+      };
+  };
+  /**
+   * @Query(key:? string)
+   * If key is not mentioned or `null`, will return the entire query object.
+   * If key is mentioned and not null, will return a certain property of the query object, defined by the key's value.
+   */
+  var Query = function (key) {
+      return function (target, methodKey, parameterIndex) {
+          appendParameterMapper(target, methodKey, parameterIndex, function (req) {
+              var queryData = url.parse(req.url || '', true).query;
+              return key ? queryData[key] : queryData;
+          });
+      };
+  };
+  /**
+   * @Req()
+   */
+  var Req = function () {
+      return function (target, methodKey, parameterIndex) {
+          appendParameterMapper(target, methodKey, parameterIndex, function (req) { return req; });
+      };
+  };
+  /**
+   * @Res()
+   */
+  var Res = function () {
+      return function (target, methodKey, parameterIndex) {
+          appendParameterMapper(target, methodKey, parameterIndex, function (res) { return res; }, 'response');
+      };
+  };
+  // /**
+  //  * @Redirect(url: string, code: number = 301)
+  //  */
+  /******************************************************************************
+   *
+   * Helpers
+   *
+   *****************************************************************************/
+  /**
+   *
+   * @param methodName
+   */
+  var methodArgumentsDescriptor = function (methodName) {
+      return (typeof methodName === 'string' ? methodName : methodName.toString()) + "__Arguments";
+  };
+  /**
+   *
+   * @link https://nodejs.org/es/docs/guides/anatomy-of-an-http-transaction/
+   * @param req
+   */
+  var readRequestBody = function (req) { return __awaiter(void 0, void 0, void 0, function () {
+      return __generator(this, function (_a) {
+          return [2 /*return*/, new Promise(function (resolve, reject) {
+                  var body = [];
+                  req
+                      .on('error', function (err) { return reject(err); })
+                      .on('data', function (chunk) { return body.push(chunk); })
+                      .on('end', function () {
+                      var str = Buffer.concat(body).toString();
+                      resolve(str);
+                  });
+              })
+              /**
+               *
+               * @param target
+               * @param methodName
+               * @param parameterIndex
+               * @param callable
+               * @param source
+               */
+          ];
+      });
+  }); };
+  /**
+   *
+   * @param target
+   * @param methodName
+   * @param parameterIndex
+   * @param callable
+   * @param source
+   */
+  var appendParameterMapper = function (target, methodName, parameterIndex, callable, source) {
+      if (source === void 0) { source = 'request'; }
+      // calculate method (name) descriptor
+      var methodDescriptor = methodArgumentsDescriptor(methodName);
+      // can't set ParameterDescriptor[] type due to creation of an array of zeros
+      var metadata = Array(parameterIndex + 1);
+      // copy already discovered parameters into the new array
+      if (Reflect.hasMetadata(methodDescriptor, target)) {
+          var oldMetadata = Reflect.getMetadata(methodDescriptor, target) || [];
+          oldMetadata.forEach(function (data, index) {
+              metadata[index] = data;
+          });
+      }
+      // add the new discovered parameter descriptor to the array
+      metadata[parameterIndex] = {
+          callable: callable,
+          source: source,
+      };
+      // set the data back
+      Reflect.defineMetadata(methodDescriptor, metadata, target);
+  };
+
+  /**
+   * Comment
+   *
+   * @returns {MethodDecorator}
+   */
+  var RespondWith = function (bodyEncoder) {
+      if (bodyEncoder === void 0) { bodyEncoder = function (data) { return data; }; }
+      var other = [];
+      for (var _i = 1; _i < arguments.length; _i++) {
+          other[_i - 1] = arguments[_i];
+      }
+      return function (target, propertyKey, descriptor) {
+          var handler = function (oldMethod) {
+              return function () {
+                  var args = [];
+                  for (var _i = 0; _i < arguments.length; _i++) {
+                      args[_i] = arguments[_i];
+                  }
+                  var result = oldMethod.apply(void 0, args);
+                  return result instanceof Promise
+                      ? result.then(function (data) { return bodyEncoder.apply(void 0, __spreadArrays([data], other)); })
+                      : bodyEncoder.apply(void 0, __spreadArrays([result], other));
+              };
+          };
+          return common.wrapPropertyDescriptorHandler(descriptor, handler);
+      };
+  };
+  /**
+   * Wrap controller respond with raw data
+   *
+   * @param args
+   */
+  var RespondWithRaw = function () {
+      var args = [];
+      for (var _i = 0; _i < arguments.length; _i++) {
+          args[_i] = arguments[_i];
+      }
+      return RespondWith.apply(void 0, __spreadArrays([function (data) { return data; }], args));
+  };
+  /**
+   * Wrap controller action to encode response into a JSON string
+   *
+   * @param args
+   */
+  var RespondWithJson = function () {
+      var args = [];
+      for (var _i = 0; _i < arguments.length; _i++) {
+          args[_i] = arguments[_i];
+      }
+      return RespondWith.apply(void 0, __spreadArrays([JSON.stringify], args));
+  };
+  /**
+   * Wrap controller action to encode response into a YAML string
+   *
+   * @param args
+   */
+  var RespondWithYaml = function () {
+      var args = [];
+      for (var _i = 0; _i < arguments.length; _i++) {
+          args[_i] = arguments[_i];
+      }
+      return RespondWith.apply(void 0, __spreadArrays([YAML.stringify], args));
+  };
 
   /**
    * @link https://github.com/nestjs/nest/blob/master/packages/common/exceptions/http.exception.ts
@@ -746,32 +1039,111 @@ define('index', ['exports'], function (exports) { 'use strict';
       return NetworkAuthenticationRequiredException;
   }(HttpException));
 
+  var MockRequest = /** @class */ (function (_super) {
+      __extends(MockRequest, _super);
+      function MockRequest(mock, body) {
+          var _this = _super.call(this, new net.Socket()) || this;
+          _this.headers = mock.headers;
+          _this.method = mock.method;
+          _this.url = mock.url;
+          if (body) {
+              _this.push(body);
+              _this.push(null);
+          }
+          return _this;
+      }
+      return MockRequest;
+  }(http.IncomingMessage));
+  var mockReq = function (data) {
+      var _a;
+      return new MockRequest({
+          complete: true,
+          connection: new net.Socket(),
+          headers: (_a = {},
+              _a[exports.RequestHeader.COOKIE.toLowerCase()] = 'test=testValue; test2=testValue2',
+              _a[exports.RequestHeader.X_FORWARDED_FOR.toLowerCase()] = '8.8.8.8',
+              _a.test = 'testValue',
+              _a.test2 = 'testValue2',
+              _a),
+          httpVersion: '1.1',
+          httpVersionMajor: 1,
+          httpVersionMinor: 1,
+          method: 'GET',
+          url: '/test?test=testValue&test2=testValue2',
+      }, JSON.stringify(data));
+  };
+  var mockReqYaml = function (data) {
+      var _a;
+      return new MockRequest({
+          complete: true,
+          connection: new net.Socket(),
+          headers: (_a = {},
+              _a[exports.RequestHeader.COOKIE.toLowerCase()] = 'test=testValue; test2=testValue2',
+              _a[exports.RequestHeader.X_FORWARDED_FOR.toLowerCase()] = '8.8.8.8',
+              _a.test = 'testValue',
+              _a.test2 = 'testValue2',
+              _a),
+          httpVersion: '1.1',
+          httpVersionMajor: 1,
+          httpVersionMinor: 1,
+          method: 'GET',
+          url: '/test?test=testValue&test2=testValue2',
+      }, YAML.stringify(data));
+  };
+
+  var MockResponse = /** @class */ (function (_super) {
+      __extends(MockResponse, _super);
+      function MockResponse(req, mock) {
+          var _this = _super.call(this, req) || this;
+          _this.statusCode = mock ? mock.statusCode : exports.ResponseCode.OK;
+          _this.statusMessage = mock ? mock.statusMessage : exports.ResponseMessage.OK;
+          _this.writableFinished = mock ? mock.writableFinished : true;
+          return _this;
+      }
+      return MockResponse;
+  }(http.ServerResponse));
+  var mockRes = function (data) { return new MockResponse(mockReq(data)); };
+
   exports.BadGatewayException = BadGatewayException;
+  exports.Body = Body;
   exports.ConflictException = ConflictException;
+  exports.Cookie = Cookie;
   exports.ExpectationFailedException = ExpectationFailedException;
   exports.ForbiddenException = ForbiddenException;
   exports.GatewayTimeoutException = GatewayTimeoutException;
   exports.GoneException = GoneException;
   exports.HTTPVersionNotSupportedException = HTTPVersionNotSupportedException;
+  exports.Header = Header;
   exports.HttpException = HttpException;
   exports.ImateapotException = ImateapotException;
   exports.InsufficientStorageException = InsufficientStorageException;
   exports.InternalServerErrorException = InternalServerErrorException;
+  exports.Ip = Ip;
   exports.LengthRequiredException = LengthRequiredException;
   exports.LoopDetectedException = LoopDetectedException;
   exports.MethodNotAllowedException = MethodNotAllowedException;
+  exports.MockRequest = MockRequest;
+  exports.MockResponse = MockResponse;
   exports.NetworkAuthenticationRequiredException = NetworkAuthenticationRequiredException;
   exports.NotAcceptableException = NotAcceptableException;
   exports.NotFoundException = NotFoundException;
   exports.NotImplementedException = NotImplementedException;
+  exports.Param = Param;
   exports.PayloadTooLargeException = PayloadTooLargeException;
   exports.PaymentRequiredException = PaymentRequiredException;
   exports.PreconditionFailedException = PreconditionFailedException;
   exports.PreconditionRequiredException = PreconditionRequiredException;
   exports.ProxyAuthenticationRequiredException = ProxyAuthenticationRequiredException;
+  exports.Query = Query;
   exports.RangeNotSatisfiableException = RangeNotSatisfiableException;
+  exports.Req = Req;
   exports.RequestHeaderFieldsTooLargeException = RequestHeaderFieldsTooLargeException;
   exports.RequestTimeoutException = RequestTimeoutException;
+  exports.Res = Res;
+  exports.RespondWith = RespondWith;
+  exports.RespondWithJson = RespondWithJson;
+  exports.RespondWithRaw = RespondWithRaw;
+  exports.RespondWithYaml = RespondWithYaml;
   exports.ServiceUnavailableException = ServiceUnavailableException;
   exports.TooEarlyException = TooEarlyException;
   exports.TooManyRequestsException = TooManyRequestsException;
@@ -782,6 +1154,10 @@ define('index', ['exports'], function (exports) { 'use strict';
   exports.UnsupportedMediaTypeException = UnsupportedMediaTypeException;
   exports.UpgradeRequiredException = UpgradeRequiredException;
   exports.VariantAlsoNegotiatesException = VariantAlsoNegotiatesException;
+  exports.methodArgumentsDescriptor = methodArgumentsDescriptor;
+  exports.mockReq = mockReq;
+  exports.mockReqYaml = mockReqYaml;
+  exports.mockRes = mockRes;
 
   Object.defineProperty(exports, '__esModule', { value: true });
 
