@@ -1,7 +1,7 @@
 import 'reflect-metadata';
 import SetCookieParser from 'set-cookie-parser';
 import { parse } from 'url';
-import { wrapPropertyDescriptorHandler } from '@glasswing/common';
+import { extendClassMethod } from '@glasswing/common';
 import YAML from 'yaml';
 import { IncomingMessage, ServerResponse } from 'http';
 import { Socket } from 'net';
@@ -590,7 +590,7 @@ var RespondWith = function (bodyEncoder) {
                     : bodyEncoder.apply(void 0, __spreadArrays([result], other));
             };
         };
-        return wrapPropertyDescriptorHandler(descriptor, handler);
+        return extendClassMethod(descriptor, handler);
     };
 };
 /**

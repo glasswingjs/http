@@ -1,13 +1,13 @@
 System.register(['reflect-metadata', 'set-cookie-parser', 'url', '@glasswing/common', 'yaml', 'http', 'net'], function (exports) {
   'use strict';
-  var SetCookieParser, parse, wrapPropertyDescriptorHandler, YAML, IncomingMessage, ServerResponse, Socket;
+  var SetCookieParser, parse, extendClassMethod, YAML, IncomingMessage, ServerResponse, Socket;
   return {
     setters: [function () {}, function (module) {
       SetCookieParser = module.default;
     }, function (module) {
       parse = module.parse;
     }, function (module) {
-      wrapPropertyDescriptorHandler = module.wrapPropertyDescriptorHandler;
+      extendClassMethod = module.extendClassMethod;
     }, function (module) {
       YAML = module.default;
     }, function (module) {
@@ -609,7 +609,7 @@ System.register(['reflect-metadata', 'set-cookie-parser', 'url', '@glasswing/com
                           : bodyEncoder.apply(void 0, __spreadArrays([result], other));
                   };
               };
-              return wrapPropertyDescriptorHandler(descriptor, handler);
+              return extendClassMethod(descriptor, handler);
           };
       });
       /**

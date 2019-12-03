@@ -497,7 +497,7 @@
                   : bodyEncoder(result, ...other);
           };
       };
-      return common.wrapPropertyDescriptorHandler(descriptor, handler);
+      return common.extendClassMethod(descriptor, handler);
   };
   /**
    * Wrap controller respond with raw data

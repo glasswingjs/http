@@ -1,4 +1,4 @@
-import {ControllerAction, wrapPropertyDescriptorHandler} from '@glasswing/common'
+import {ClassMethod, extendClassMethod} from '@glasswing/common'
 import YAML from 'yaml'
 
 import {ResponseBodyEncoder} from '../_types'
@@ -16,7 +16,7 @@ export const RespondWith = (
   propertyKey: string | symbol,
   descriptor: PropertyDescriptor,
 ): PropertyDescriptor => {
-  const handler = (oldMethod: ControllerAction) => {
+  const handler = (oldMethod: ClassMethod) => {
     return (...args: any[]) => {
       const result = oldMethod(...args)
       return result instanceof Promise
@@ -24,7 +24,7 @@ export const RespondWith = (
         : bodyEncoder(result, ...other)
     }
   }
-  return wrapPropertyDescriptorHandler(descriptor, handler)
+  return extendClassMethod(descriptor, handler)
 }
 
 /**

@@ -570,7 +570,7 @@ define('index', ['exports', 'reflect-metadata', 'set-cookie-parser', 'url', '@gl
                       : bodyEncoder.apply(void 0, __spreadArrays([result], other));
               };
           };
-          return common.wrapPropertyDescriptorHandler(descriptor, handler);
+          return common.extendClassMethod(descriptor, handler);
       };
   };
   /**
