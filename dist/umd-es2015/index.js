@@ -887,7 +887,7 @@
           super(req);
           this.statusCode = mock ? mock.statusCode : exports.ResponseCode.OK;
           this.statusMessage = mock ? mock.statusMessage : exports.ResponseMessage.OK;
-          this.writableFinished = mock ? mock.writableFinished : true;
+          //    this.writableFinished = mock ? mock.writableFinished : true
       }
   }
   const mockRes = (data) => new MockResponse(mockReq(data));

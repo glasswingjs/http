@@ -7,7 +7,7 @@ import {mockReq} from './request'
 export interface MockResponseOptions {
   statusCode: number
   statusMessage: string
-  writableFinished: boolean
+  //  writableFinished: boolean
 }
 
 export class MockResponse extends ServerResponse {
@@ -16,7 +16,7 @@ export class MockResponse extends ServerResponse {
 
     this.statusCode = mock ? mock.statusCode : ResponseCode.OK
     this.statusMessage = mock ? mock.statusMessage : ResponseMessage.OK
-    this.writableFinished = mock ? mock.writableFinished : true
+    //    this.writableFinished = mock ? mock.writableFinished : true
   }
 }
 

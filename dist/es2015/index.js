@@ -903,7 +903,7 @@ class MockResponse extends ServerResponse {
         super(req);
         this.statusCode = mock ? mock.statusCode : ResponseCode.OK;
         this.statusMessage = mock ? mock.statusMessage : ResponseMessage.OK;
-        this.writableFinished = mock ? mock.writableFinished : true;
+        //    this.writableFinished = mock ? mock.writableFinished : true
     }
 }
 const mockRes = (data) => new MockResponse(mockReq(data));

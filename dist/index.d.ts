@@ -642,7 +642,6 @@ export declare const mockReqYaml: (data: object) => Request;
 export interface MockResponseOptions {
 	statusCode: number;
 	statusMessage: string;
-	writableFinished: boolean;
 }
 export declare class MockResponse extends ServerResponse {
 	constructor(req: IncomingMessage, mock?: MockResponseOptions);

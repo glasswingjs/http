@@ -1117,8 +1117,8 @@ var MockResponse = /** @class */ (function (_super) {
         var _this = _super.call(this, req) || this;
         _this.statusCode = mock ? mock.statusCode : ResponseCode.OK;
         _this.statusMessage = mock ? mock.statusMessage : ResponseMessage.OK;
-        _this.writableFinished = mock ? mock.writableFinished : true;
         return _this;
+        //    this.writableFinished = mock ? mock.writableFinished : true
     }
     return MockResponse;
 }(ServerResponse));
