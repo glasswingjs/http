@@ -1,5 +1,14 @@
-import {IncomingMessage, RequestListener as HttpRequestHandler, ServerResponse} from 'http'
-import {Http2ServerRequest, Http2ServerResponse} from 'http2'
+import {ServerResponse} from 'http'
+import {Http2ServerResponse} from 'http2'
+import {Cookie} from 'set-cookie-parser'
+
+/**
+ * HTTP Version
+ */
+export enum Version {
+  V1 = 'http1',
+  V2 = 'http2',
+}
 
 export interface HttpExceptionBody {
   message?: object | string
@@ -7,30 +16,15 @@ export interface HttpExceptionBody {
   code?: number
 }
 
-export type Request = IncomingMessage | Http2ServerRequest
-
 export type Response = ServerResponse | Http2ServerResponse
 
 // export {Cookie as Cookie} from '@types/set-cookie-parser'
 
-export type RequestHandler = (req: Request, res: Response, params: any) => void
+export declare type CookieObject = Cookie
 
 export type RequestBodyDecoder = (val: string) => any
 
 export type ResponseBodyEncoder = (val: any, ...args: any[]) => any
-
-export type ArgumentSource = 'request' | 'response' | 'params'
-
-export type ArgumentMapperCallable = (entity: any) => any
-
-export interface BodyArgumentMapperCallable extends ArgumentMapperCallable {
-  (req: Request): Promise<any>
-}
-
-export interface ParameterDescriptor {
-  callable: ArgumentMapperCallable
-  source: ArgumentSource
-}
 
 /**
  * List of HTTP headers, as described on MDN Documentation
@@ -322,18 +316,3 @@ export enum RequestMethod {
    */
   TRACE = 'trace',
 }
-
-// /**
-//  * Full list of Request Methods
-//  */
-// export type RequestMethod =
-//   | 'all'
-//   | 'connect'
-//   | 'delete'
-//   | 'get'
-//   | 'head'
-//   | 'options'
-//   | 'patch'
-//   | 'post'
-//   | 'put'
-//   | 'trace'

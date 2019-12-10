@@ -5,17 +5,21 @@ Object.defineProperty(exports, '__esModule', { value: true });
 function _interopDefault (ex) { return (ex && (typeof ex === 'object') && 'default' in ex) ? ex['default'] : ex; }
 
 require('reflect-metadata');
-var SetCookieParser = _interopDefault(require('set-cookie-parser'));
-var url = require('url');
 var common = require('@glasswing/common');
 var YAML = _interopDefault(require('yaml'));
-var http = require('http');
 var net = require('net');
+var http = require('http');
+var http2 = require('http2');
+var SetCookieParser = _interopDefault(require('set-cookie-parser'));
+var url = require('url');
 
 /**
- * List of HTTP headers, as described on MDN Documentation
- * @link https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers
+ * HTTP Version
  */
+(function (Version) {
+    Version["V1"] = "http1";
+    Version["V2"] = "http2";
+})(exports.Version || (exports.Version = {}));
 (function (RequestHeader) {
     RequestHeader["ACCEPT"] = "Accept";
     RequestHeader["ACCEPT_CH"] = "Accept-CH";
@@ -285,20 +289,6 @@ var net = require('net');
      */
     RequestMethod["TRACE"] = "trace";
 })(exports.RequestMethod || (exports.RequestMethod = {}));
-// /**
-//  * Full list of Request Methods
-//  */
-// export type RequestMethod =
-//   | 'all'
-//   | 'connect'
-//   | 'delete'
-//   | 'get'
-//   | 'head'
-//   | 'options'
-//   | 'patch'
-//   | 'post'
-//   | 'put'
-//   | 'trace'
 
 /*! *****************************************************************************
 Copyright (c) Microsoft Corporation. All rights reserved.
@@ -374,6 +364,10 @@ function __spreadArrays() {
     return r;
 }
 
+(function (ArgumentSource) {
+    ArgumentSource["REQUEST"] = "request";
+    ArgumentSource["RESPONSE"] = "response";
+})(exports.ArgumentSource || (exports.ArgumentSource = {}));
 /******************************************************************************
  *
  * Helpers
@@ -405,20 +399,11 @@ var Body = function (key, decoder) {
 var Cookie = function (key, value) {
     return function (target, methodKey, parameterIndex) {
         appendParameterMapper(target, methodKey, parameterIndex, function (req) {
-            var cookiesString = (req.headers || {}).cookie || '';
-            // const cookiesArray: any[] = cookiesString
-            //   .split(';')
-            //   .map((cookie: string) => {
-            //     var parts: string[] = cookie.split('=');
-            //     return { [(parts.shift()||'').trim()]: decodeURI(parts.join('=')), }
-            //   })
-            // const cookies: any = Object.assign({}, ...cookiesArray)
-            var cookies = SetCookieParser.parse(cookiesString.split('; '), {
-                decodeValues: true,
-                map: true,
-            });
-            return key ? cookies[key] : cookies;
-        }, 'request');
+            if (!req.cookieParams) {
+                return null;
+            }
+            return key ? req.cookieParams[key] : req.cookieParams;
+        });
     };
 };
 /**
@@ -431,7 +416,7 @@ var Header = function (key) {
     return function (target, methodKey, parameterIndex) {
         appendParameterMapper(target, methodKey, parameterIndex, function (req) {
             return key ? req.headers[key] : req.headers;
-        }, 'request');
+        });
     };
 };
 /**
@@ -450,7 +435,9 @@ var Ip = function () {
  */
 var Param = function (key) {
     return function (target, methodKey, parameterIndex) {
-        appendParameterMapper(target, methodKey, parameterIndex, function (params) { return (key ? params[key] : params); }, 'params');
+        appendParameterMapper(target, methodKey, parameterIndex, function (req) {
+            return key ? req.routeParams[key] : req.routeParams;
+        });
     };
 };
 /**
@@ -461,8 +448,7 @@ var Param = function (key) {
 var Query = function (key) {
     return function (target, methodKey, parameterIndex) {
         appendParameterMapper(target, methodKey, parameterIndex, function (req) {
-            var queryData = url.parse(req.url || '', true).query;
-            return key ? queryData[key] : queryData;
+            return key ? req.queryParams[key] : req.queryParams;
         });
     };
 };
@@ -479,7 +465,7 @@ var Req = function () {
  */
 var Res = function () {
     return function (target, methodKey, parameterIndex) {
-        appendParameterMapper(target, methodKey, parameterIndex, function (res) { return res; }, 'response');
+        appendParameterMapper(target, methodKey, parameterIndex, function (res) { return res; }, exports.ArgumentSource.RESPONSE);
     };
 };
 // /**
@@ -534,7 +520,7 @@ var readRequestBody = function (req) { return __awaiter(void 0, void 0, void 0, 
  * @param source
  */
 var appendParameterMapper = function (target, methodName, parameterIndex, callable, source) {
-    if (source === void 0) { source = 'request'; }
+    if (source === void 0) { source = exports.ArgumentSource.REQUEST; }
     // calculate method (name) descriptor
     var methodDescriptor = methodArgumentsDescriptor(methodName);
     // can't set ParameterDescriptor[] type due to creation of an array of zeros
@@ -1048,10 +1034,84 @@ var NetworkAuthenticationRequiredException = /** @class */ (function (_super) {
     return NetworkAuthenticationRequiredException;
 }(HttpException));
 
+var RequestV1 = /** @class */ (function (_super) {
+    __extends(RequestV1, _super);
+    /**
+     * Constructor
+     * @param socket
+     * @param routeParams
+     */
+    function RequestV1(socket, routeParams) {
+        var _this = _super.call(this, socket) || this;
+        _this.cookieParams = _this.parseCookieParams();
+        _this.routeParams = routeParams;
+        _this.queryParams = _this.parseQueryParams();
+        return _this;
+    }
+    /**
+     * Parse Cookie string
+     * @param cookies
+     */
+    RequestV1.prototype.parseCookieParams = function (cookies) {
+        var cookiesString = cookies ? cookies : (this.headers || {}).cookie || '';
+        return SetCookieParser.parse(cookiesString.split('; '), {
+            decodeValues: true,
+            map: true,
+        });
+    };
+    /**
+     * Parse url string
+     * @param url
+     */
+    RequestV1.prototype.parseQueryParams = function (url$1) {
+        var urlString = url$1 ? url$1 : this.url || '';
+        return url.parse(urlString, true).query;
+    };
+    return RequestV1;
+}(http.IncomingMessage));
+var RequestV2 = /** @class */ (function (_super) {
+    __extends(RequestV2, _super);
+    /**
+     * Constructor
+     * @param stream
+     * @param headers
+     * @param options
+     * @param rawHeaders
+     * @param routeParams
+     */
+    function RequestV2(stream, headers, options, rawHeaders, routeParams) {
+        var _this = _super.call(this, stream, headers, options, rawHeaders) || this;
+        _this.cookieParams = _this.parseCookieParams();
+        _this.routeParams = routeParams;
+        _this.queryParams = _this.parseQueryParams();
+        return _this;
+    }
+    /**
+     * Parse Cookie string
+     * @param cookies
+     */
+    RequestV2.prototype.parseCookieParams = function (cookies) {
+        var cookiesString = cookies ? cookies : (this.headers || {}).cookie || '';
+        return SetCookieParser.parse(cookiesString.split('; '), {
+            decodeValues: true,
+            map: true,
+        });
+    };
+    /**
+     * Parse url string
+     * @param url
+     */
+    RequestV2.prototype.parseQueryParams = function (url$1) {
+        var urlString = url$1 ? url$1 : this.url || '';
+        return url.parse(urlString, true).query;
+    };
+    return RequestV2;
+}(http2.Http2ServerRequest));
+
 var MockRequest = /** @class */ (function (_super) {
     __extends(MockRequest, _super);
-    function MockRequest(mock, body) {
-        var _this = _super.call(this, new net.Socket()) || this;
+    function MockRequest(mock, body, routeParams) {
+        var _this = _super.call(this, new net.Socket(), routeParams) || this;
         _this.headers = mock.headers;
         _this.method = mock.method;
         _this.url = mock.url;
@@ -1059,11 +1119,13 @@ var MockRequest = /** @class */ (function (_super) {
             _this.push(body);
             _this.push(null);
         }
+        _this.cookieParams = _this.parseCookieParams();
+        _this.queryParams = _this.parseQueryParams();
         return _this;
     }
     return MockRequest;
-}(http.IncomingMessage));
-var mockReq = function (data) {
+}(RequestV1));
+var mockReq = function (data, params) {
     var _a;
     return new MockRequest({
         complete: true,
@@ -1079,9 +1141,9 @@ var mockReq = function (data) {
         httpVersionMinor: 1,
         method: 'GET',
         url: '/test?test=testValue&test2=testValue2',
-    }, JSON.stringify(data));
+    }, JSON.stringify(data), params);
 };
-var mockReqYaml = function (data) {
+var mockReqYaml = function (data, params) {
     var _a;
     return new MockRequest({
         complete: true,
@@ -1097,7 +1159,7 @@ var mockReqYaml = function (data) {
         httpVersionMinor: 1,
         method: 'GET',
         url: '/test?test=testValue&test2=testValue2',
-    }, YAML.stringify(data));
+    }, YAML.stringify(data), params);
 };
 
 var MockResponse = /** @class */ (function (_super) {
@@ -1148,6 +1210,8 @@ exports.RangeNotSatisfiableException = RangeNotSatisfiableException;
 exports.Req = Req;
 exports.RequestHeaderFieldsTooLargeException = RequestHeaderFieldsTooLargeException;
 exports.RequestTimeoutException = RequestTimeoutException;
+exports.RequestV1 = RequestV1;
+exports.RequestV2 = RequestV2;
 exports.Res = Res;
 exports.RespondWith = RespondWith;
 exports.RespondWithJson = RespondWithJson;

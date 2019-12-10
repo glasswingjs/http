@@ -1,12 +1,15 @@
-define('index', ['exports', 'reflect-metadata', 'set-cookie-parser', 'url', '@glasswing/common', 'yaml', 'http', 'net'], function (exports, reflectMetadata, SetCookieParser, url, common, YAML, http, net) { 'use strict';
+define('index', ['exports', 'reflect-metadata', '@glasswing/common', 'yaml', 'net', 'http', 'http2', 'set-cookie-parser', 'url'], function (exports, reflectMetadata, common, YAML, net, http, http2, SetCookieParser, url) { 'use strict';
 
-  SetCookieParser = SetCookieParser && SetCookieParser.hasOwnProperty('default') ? SetCookieParser['default'] : SetCookieParser;
   YAML = YAML && YAML.hasOwnProperty('default') ? YAML['default'] : YAML;
+  SetCookieParser = SetCookieParser && SetCookieParser.hasOwnProperty('default') ? SetCookieParser['default'] : SetCookieParser;
 
   /**
-   * List of HTTP headers, as described on MDN Documentation
-   * @link https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers
+   * HTTP Version
    */
+  (function (Version) {
+      Version["V1"] = "http1";
+      Version["V2"] = "http2";
+  })(exports.Version || (exports.Version = {}));
   (function (RequestHeader) {
       RequestHeader["ACCEPT"] = "Accept";
       RequestHeader["ACCEPT_CH"] = "Accept-CH";
@@ -276,20 +279,6 @@ define('index', ['exports', 'reflect-metadata', 'set-cookie-parser', 'url', '@gl
        */
       RequestMethod["TRACE"] = "trace";
   })(exports.RequestMethod || (exports.RequestMethod = {}));
-  // /**
-  //  * Full list of Request Methods
-  //  */
-  // export type RequestMethod =
-  //   | 'all'
-  //   | 'connect'
-  //   | 'delete'
-  //   | 'get'
-  //   | 'head'
-  //   | 'options'
-  //   | 'patch'
-  //   | 'post'
-  //   | 'put'
-  //   | 'trace'
 
   /*! *****************************************************************************
   Copyright (c) Microsoft Corporation. All rights reserved.
@@ -365,6 +354,10 @@ define('index', ['exports', 'reflect-metadata', 'set-cookie-parser', 'url', '@gl
       return r;
   }
 
+  (function (ArgumentSource) {
+      ArgumentSource["REQUEST"] = "request";
+      ArgumentSource["RESPONSE"] = "response";
+  })(exports.ArgumentSource || (exports.ArgumentSource = {}));
   /******************************************************************************
    *
    * Helpers
@@ -396,20 +389,11 @@ define('index', ['exports', 'reflect-metadata', 'set-cookie-parser', 'url', '@gl
   var Cookie = function (key, value) {
       return function (target, methodKey, parameterIndex) {
           appendParameterMapper(target, methodKey, parameterIndex, function (req) {
-              var cookiesString = (req.headers || {}).cookie || '';
-              // const cookiesArray: any[] = cookiesString
-              //   .split(';')
-              //   .map((cookie: string) => {
-              //     var parts: string[] = cookie.split('=');
-              //     return { [(parts.shift()||'').trim()]: decodeURI(parts.join('=')), }
-              //   })
-              // const cookies: any = Object.assign({}, ...cookiesArray)
-              var cookies = SetCookieParser.parse(cookiesString.split('; '), {
-                  decodeValues: true,
-                  map: true,
-              });
-              return key ? cookies[key] : cookies;
-          }, 'request');
+              if (!req.cookieParams) {
+                  return null;
+              }
+              return key ? req.cookieParams[key] : req.cookieParams;
+          });
       };
   };
   /**
@@ -422,7 +406,7 @@ define('index', ['exports', 'reflect-metadata', 'set-cookie-parser', 'url', '@gl
       return function (target, methodKey, parameterIndex) {
           appendParameterMapper(target, methodKey, parameterIndex, function (req) {
               return key ? req.headers[key] : req.headers;
-          }, 'request');
+          });
       };
   };
   /**
@@ -441,7 +425,9 @@ define('index', ['exports', 'reflect-metadata', 'set-cookie-parser', 'url', '@gl
    */
   var Param = function (key) {
       return function (target, methodKey, parameterIndex) {
-          appendParameterMapper(target, methodKey, parameterIndex, function (params) { return (key ? params[key] : params); }, 'params');
+          appendParameterMapper(target, methodKey, parameterIndex, function (req) {
+              return key ? req.routeParams[key] : req.routeParams;
+          });
       };
   };
   /**
@@ -452,8 +438,7 @@ define('index', ['exports', 'reflect-metadata', 'set-cookie-parser', 'url', '@gl
   var Query = function (key) {
       return function (target, methodKey, parameterIndex) {
           appendParameterMapper(target, methodKey, parameterIndex, function (req) {
-              var queryData = url.parse(req.url || '', true).query;
-              return key ? queryData[key] : queryData;
+              return key ? req.queryParams[key] : req.queryParams;
           });
       };
   };
@@ -470,7 +455,7 @@ define('index', ['exports', 'reflect-metadata', 'set-cookie-parser', 'url', '@gl
    */
   var Res = function () {
       return function (target, methodKey, parameterIndex) {
-          appendParameterMapper(target, methodKey, parameterIndex, function (res) { return res; }, 'response');
+          appendParameterMapper(target, methodKey, parameterIndex, function (res) { return res; }, exports.ArgumentSource.RESPONSE);
       };
   };
   // /**
@@ -525,7 +510,7 @@ define('index', ['exports', 'reflect-metadata', 'set-cookie-parser', 'url', '@gl
    * @param source
    */
   var appendParameterMapper = function (target, methodName, parameterIndex, callable, source) {
-      if (source === void 0) { source = 'request'; }
+      if (source === void 0) { source = exports.ArgumentSource.REQUEST; }
       // calculate method (name) descriptor
       var methodDescriptor = methodArgumentsDescriptor(methodName);
       // can't set ParameterDescriptor[] type due to creation of an array of zeros
@@ -1039,10 +1024,84 @@ define('index', ['exports', 'reflect-metadata', 'set-cookie-parser', 'url', '@gl
       return NetworkAuthenticationRequiredException;
   }(HttpException));
 
+  var RequestV1 = /** @class */ (function (_super) {
+      __extends(RequestV1, _super);
+      /**
+       * Constructor
+       * @param socket
+       * @param routeParams
+       */
+      function RequestV1(socket, routeParams) {
+          var _this = _super.call(this, socket) || this;
+          _this.cookieParams = _this.parseCookieParams();
+          _this.routeParams = routeParams;
+          _this.queryParams = _this.parseQueryParams();
+          return _this;
+      }
+      /**
+       * Parse Cookie string
+       * @param cookies
+       */
+      RequestV1.prototype.parseCookieParams = function (cookies) {
+          var cookiesString = cookies ? cookies : (this.headers || {}).cookie || '';
+          return SetCookieParser.parse(cookiesString.split('; '), {
+              decodeValues: true,
+              map: true,
+          });
+      };
+      /**
+       * Parse url string
+       * @param url
+       */
+      RequestV1.prototype.parseQueryParams = function (url$1) {
+          var urlString = url$1 ? url$1 : this.url || '';
+          return url.parse(urlString, true).query;
+      };
+      return RequestV1;
+  }(http.IncomingMessage));
+  var RequestV2 = /** @class */ (function (_super) {
+      __extends(RequestV2, _super);
+      /**
+       * Constructor
+       * @param stream
+       * @param headers
+       * @param options
+       * @param rawHeaders
+       * @param routeParams
+       */
+      function RequestV2(stream, headers, options, rawHeaders, routeParams) {
+          var _this = _super.call(this, stream, headers, options, rawHeaders) || this;
+          _this.cookieParams = _this.parseCookieParams();
+          _this.routeParams = routeParams;
+          _this.queryParams = _this.parseQueryParams();
+          return _this;
+      }
+      /**
+       * Parse Cookie string
+       * @param cookies
+       */
+      RequestV2.prototype.parseCookieParams = function (cookies) {
+          var cookiesString = cookies ? cookies : (this.headers || {}).cookie || '';
+          return SetCookieParser.parse(cookiesString.split('; '), {
+              decodeValues: true,
+              map: true,
+          });
+      };
+      /**
+       * Parse url string
+       * @param url
+       */
+      RequestV2.prototype.parseQueryParams = function (url$1) {
+          var urlString = url$1 ? url$1 : this.url || '';
+          return url.parse(urlString, true).query;
+      };
+      return RequestV2;
+  }(http2.Http2ServerRequest));
+
   var MockRequest = /** @class */ (function (_super) {
       __extends(MockRequest, _super);
-      function MockRequest(mock, body) {
-          var _this = _super.call(this, new net.Socket()) || this;
+      function MockRequest(mock, body, routeParams) {
+          var _this = _super.call(this, new net.Socket(), routeParams) || this;
           _this.headers = mock.headers;
           _this.method = mock.method;
           _this.url = mock.url;
@@ -1050,11 +1109,13 @@ define('index', ['exports', 'reflect-metadata', 'set-cookie-parser', 'url', '@gl
               _this.push(body);
               _this.push(null);
           }
+          _this.cookieParams = _this.parseCookieParams();
+          _this.queryParams = _this.parseQueryParams();
           return _this;
       }
       return MockRequest;
-  }(http.IncomingMessage));
-  var mockReq = function (data) {
+  }(RequestV1));
+  var mockReq = function (data, params) {
       var _a;
       return new MockRequest({
           complete: true,
@@ -1070,9 +1131,9 @@ define('index', ['exports', 'reflect-metadata', 'set-cookie-parser', 'url', '@gl
           httpVersionMinor: 1,
           method: 'GET',
           url: '/test?test=testValue&test2=testValue2',
-      }, JSON.stringify(data));
+      }, JSON.stringify(data), params);
   };
-  var mockReqYaml = function (data) {
+  var mockReqYaml = function (data, params) {
       var _a;
       return new MockRequest({
           complete: true,
@@ -1088,7 +1149,7 @@ define('index', ['exports', 'reflect-metadata', 'set-cookie-parser', 'url', '@gl
           httpVersionMinor: 1,
           method: 'GET',
           url: '/test?test=testValue&test2=testValue2',
-      }, YAML.stringify(data));
+      }, YAML.stringify(data), params);
   };
 
   var MockResponse = /** @class */ (function (_super) {
@@ -1139,6 +1200,8 @@ define('index', ['exports', 'reflect-metadata', 'set-cookie-parser', 'url', '@gl
   exports.Req = Req;
   exports.RequestHeaderFieldsTooLargeException = RequestHeaderFieldsTooLargeException;
   exports.RequestTimeoutException = RequestTimeoutException;
+  exports.RequestV1 = RequestV1;
+  exports.RequestV2 = RequestV2;
   exports.Res = Res;
   exports.RespondWith = RespondWith;
   exports.RespondWithJson = RespondWithJson;

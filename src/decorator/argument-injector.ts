@@ -1,18 +1,24 @@
 import 'reflect-metadata'
 
-import {ParsedUrlQuery} from 'querystring'
-import SetCookieParser from 'set-cookie-parser'
-import {parse} from 'url'
+import {RequestBodyDecoder, RequestHeader, Response} from '../_types'
 
-import {
-  ArgumentMapperCallable,
-  ArgumentSource,
-  ParameterDescriptor,
-  Request,
-  RequestBodyDecoder,
-  RequestHeader,
-  Response,
-} from '../_types'
+import {Request} from '../request'
+
+export enum ArgumentSource {
+  REQUEST = 'request',
+  RESPONSE = 'response',
+}
+
+export type ArgumentMapperCallable = (entity: any) => any
+
+export interface BodyArgumentMapperCallable extends ArgumentMapperCallable {
+  (req: Request): Promise<any>
+}
+
+export interface ParameterDescriptor {
+  callable: ArgumentMapperCallable
+  source: ArgumentSource
+}
 
 /******************************************************************************
  *
@@ -50,27 +56,12 @@ export const Body = (key?: string, decoder: RequestBodyDecoder = JSON.parse): Pa
  */
 export const Cookie = (key?: string, value?: any): ParameterDecorator => {
   return (target: any, methodKey: string | symbol, parameterIndex: number) => {
-    appendParameterMapper(
-      target,
-      methodKey,
-      parameterIndex,
-      (req: Request) => {
-        const cookiesString: string = (req.headers || {}).cookie || ''
-        // const cookiesArray: any[] = cookiesString
-        //   .split(';')
-        //   .map((cookie: string) => {
-        //     var parts: string[] = cookie.split('=');
-        //     return { [(parts.shift()||'').trim()]: decodeURI(parts.join('=')), }
-        //   })
-        // const cookies: any = Object.assign({}, ...cookiesArray)
-        const cookies: any = SetCookieParser.parse(cookiesString.split('; '), {
-          decodeValues: true,
-          map: true,
-        })
-        return key ? cookies[key] : cookies
-      },
-      'request',
-    )
+    appendParameterMapper(target, methodKey, parameterIndex, (req: Request) => {
+      if (!req.cookieParams) {
+        return null
+      }
+      return key ? req.cookieParams[key] : req.cookieParams
+    })
   }
 }
 
@@ -82,15 +73,9 @@ export const Cookie = (key?: string, value?: any): ParameterDecorator => {
  */
 export const Header = (key?: string): ParameterDecorator => {
   return (target: any, methodKey: string | symbol, parameterIndex: number) => {
-    appendParameterMapper(
-      target,
-      methodKey,
-      parameterIndex,
-      (req: Request) => {
-        return key ? req.headers[key] : req.headers
-      },
-      'request',
-    )
+    appendParameterMapper(target, methodKey, parameterIndex, (req: Request) => {
+      return key ? req.headers[key] : req.headers
+    })
   }
 }
 
@@ -116,12 +101,8 @@ export const Ip = (): ParameterDecorator => {
  */
 export const Param = (key?: string): ParameterDecorator => {
   return (target: any, methodKey: string | symbol, parameterIndex: number) => {
-    appendParameterMapper(
-      target,
-      methodKey,
-      parameterIndex,
-      (params: object): any => (key ? (params as any)[key] : params),
-      'params',
+    appendParameterMapper(target, methodKey, parameterIndex, (req: Request): any =>
+      key ? (req.routeParams as any)[key] : req.routeParams,
     )
   }
 }
@@ -133,10 +114,9 @@ export const Param = (key?: string): ParameterDecorator => {
  */
 export const Query = (key?: string): ParameterDecorator => {
   return (target: any, methodKey: string | symbol, parameterIndex: number) => {
-    appendParameterMapper(target, methodKey, parameterIndex, (req: Request): any => {
-      const queryData: ParsedUrlQuery = parse(req.url || '', true).query
-      return key ? queryData[key] : queryData
-    })
+    appendParameterMapper(target, methodKey, parameterIndex, (req: Request): any =>
+      key ? (req.queryParams as any)[key] : req.queryParams,
+    )
   }
 }
 
@@ -154,7 +134,7 @@ export const Req = (): ParameterDecorator => {
  */
 export const Res = (): ParameterDecorator => {
   return (target: any, methodKey: string | symbol, parameterIndex: number) => {
-    appendParameterMapper(target, methodKey, parameterIndex, (res: Response): Response => res, 'response')
+    appendParameterMapper(target, methodKey, parameterIndex, (res: Response): Response => res, ArgumentSource.RESPONSE)
   }
 }
 
@@ -205,7 +185,7 @@ const appendParameterMapper = (
   methodName: string | symbol,
   parameterIndex: number,
   callable: ArgumentMapperCallable,
-  source: ArgumentSource = 'request',
+  source: ArgumentSource = ArgumentSource.REQUEST,
 ): void => {
   // calculate method (name) descriptor
   const methodDescriptor: string = methodArgumentsDescriptor(methodName)

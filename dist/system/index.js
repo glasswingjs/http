@@ -1,30 +1,42 @@
-System.register(['reflect-metadata', 'set-cookie-parser', 'url', '@glasswing/common', 'yaml', 'http', 'net'], function (exports) {
+System.register(['reflect-metadata', '@glasswing/common', 'yaml', 'net', 'http', 'http2', 'set-cookie-parser', 'url'], function (exports) {
   'use strict';
-  var SetCookieParser, parse, extendClassMethod, YAML, IncomingMessage, ServerResponse, Socket;
+  var extendClassMethod, YAML, Socket, IncomingMessage, ServerResponse, Http2ServerRequest, SetCookieParser, parse;
   return {
     setters: [function () {}, function (module) {
-      SetCookieParser = module.default;
-    }, function (module) {
-      parse = module.parse;
-    }, function (module) {
       extendClassMethod = module.extendClassMethod;
     }, function (module) {
       YAML = module.default;
     }, function (module) {
+      Socket = module.Socket;
+    }, function (module) {
       IncomingMessage = module.IncomingMessage;
       ServerResponse = module.ServerResponse;
     }, function (module) {
-      Socket = module.Socket;
+      Http2ServerRequest = module.Http2ServerRequest;
+    }, function (module) {
+      SetCookieParser = module.default;
+    }, function (module) {
+      parse = module.parse;
     }],
     execute: function () {
 
       exports({
+        ArgumentSource: void 0,
         RequestHeader: void 0,
         RequestMethod: void 0,
         ResponseCode: void 0,
-        ResponseMessage: void 0
+        ResponseMessage: void 0,
+        Version: void 0
       });
 
+      /**
+       * HTTP Version
+       */
+      var Version;
+      (function (Version) {
+          Version["V1"] = "http1";
+          Version["V2"] = "http2";
+      })(Version || (Version = exports('Version', {})));
       /**
        * List of HTTP headers, as described on MDN Documentation
        * @link https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers
@@ -315,20 +327,6 @@ System.register(['reflect-metadata', 'set-cookie-parser', 'url', '@glasswing/com
            */
           RequestMethod["TRACE"] = "trace";
       })(RequestMethod || (RequestMethod = exports('RequestMethod', {})));
-      // /**
-      //  * Full list of Request Methods
-      //  */
-      // export type RequestMethod =
-      //   | 'all'
-      //   | 'connect'
-      //   | 'delete'
-      //   | 'get'
-      //   | 'head'
-      //   | 'options'
-      //   | 'patch'
-      //   | 'post'
-      //   | 'put'
-      //   | 'trace'
 
       /*! *****************************************************************************
       Copyright (c) Microsoft Corporation. All rights reserved.
@@ -404,6 +402,11 @@ System.register(['reflect-metadata', 'set-cookie-parser', 'url', '@glasswing/com
           return r;
       }
 
+      var ArgumentSource;
+      (function (ArgumentSource) {
+          ArgumentSource["REQUEST"] = "request";
+          ArgumentSource["RESPONSE"] = "response";
+      })(ArgumentSource || (ArgumentSource = exports('ArgumentSource', {})));
       /******************************************************************************
        *
        * Helpers
@@ -435,20 +438,11 @@ System.register(['reflect-metadata', 'set-cookie-parser', 'url', '@glasswing/com
       var Cookie = exports('Cookie', function (key, value) {
           return function (target, methodKey, parameterIndex) {
               appendParameterMapper(target, methodKey, parameterIndex, function (req) {
-                  var cookiesString = (req.headers || {}).cookie || '';
-                  // const cookiesArray: any[] = cookiesString
-                  //   .split(';')
-                  //   .map((cookie: string) => {
-                  //     var parts: string[] = cookie.split('=');
-                  //     return { [(parts.shift()||'').trim()]: decodeURI(parts.join('=')), }
-                  //   })
-                  // const cookies: any = Object.assign({}, ...cookiesArray)
-                  var cookies = SetCookieParser.parse(cookiesString.split('; '), {
-                      decodeValues: true,
-                      map: true,
-                  });
-                  return key ? cookies[key] : cookies;
-              }, 'request');
+                  if (!req.cookieParams) {
+                      return null;
+                  }
+                  return key ? req.cookieParams[key] : req.cookieParams;
+              });
           };
       });
       /**
@@ -461,7 +455,7 @@ System.register(['reflect-metadata', 'set-cookie-parser', 'url', '@glasswing/com
           return function (target, methodKey, parameterIndex) {
               appendParameterMapper(target, methodKey, parameterIndex, function (req) {
                   return key ? req.headers[key] : req.headers;
-              }, 'request');
+              });
           };
       });
       /**
@@ -480,7 +474,9 @@ System.register(['reflect-metadata', 'set-cookie-parser', 'url', '@glasswing/com
        */
       var Param = exports('Param', function (key) {
           return function (target, methodKey, parameterIndex) {
-              appendParameterMapper(target, methodKey, parameterIndex, function (params) { return (key ? params[key] : params); }, 'params');
+              appendParameterMapper(target, methodKey, parameterIndex, function (req) {
+                  return key ? req.routeParams[key] : req.routeParams;
+              });
           };
       });
       /**
@@ -491,8 +487,7 @@ System.register(['reflect-metadata', 'set-cookie-parser', 'url', '@glasswing/com
       var Query = exports('Query', function (key) {
           return function (target, methodKey, parameterIndex) {
               appendParameterMapper(target, methodKey, parameterIndex, function (req) {
-                  var queryData = parse(req.url || '', true).query;
-                  return key ? queryData[key] : queryData;
+                  return key ? req.queryParams[key] : req.queryParams;
               });
           };
       });
@@ -509,7 +504,7 @@ System.register(['reflect-metadata', 'set-cookie-parser', 'url', '@glasswing/com
        */
       var Res = exports('Res', function () {
           return function (target, methodKey, parameterIndex) {
-              appendParameterMapper(target, methodKey, parameterIndex, function (res) { return res; }, 'response');
+              appendParameterMapper(target, methodKey, parameterIndex, function (res) { return res; }, ArgumentSource.RESPONSE);
           };
       });
       // /**
@@ -564,7 +559,7 @@ System.register(['reflect-metadata', 'set-cookie-parser', 'url', '@glasswing/com
        * @param source
        */
       var appendParameterMapper = function (target, methodName, parameterIndex, callable, source) {
-          if (source === void 0) { source = 'request'; }
+          if (source === void 0) { source = ArgumentSource.REQUEST; }
           // calculate method (name) descriptor
           var methodDescriptor = methodArgumentsDescriptor(methodName);
           // can't set ParameterDescriptor[] type due to creation of an array of zeros
@@ -1078,10 +1073,84 @@ System.register(['reflect-metadata', 'set-cookie-parser', 'url', '@glasswing/com
           return NetworkAuthenticationRequiredException;
       }(HttpException)));
 
+      var RequestV1 = exports('RequestV1', /** @class */ (function (_super) {
+          __extends(RequestV1, _super);
+          /**
+           * Constructor
+           * @param socket
+           * @param routeParams
+           */
+          function RequestV1(socket, routeParams) {
+              var _this = _super.call(this, socket) || this;
+              _this.cookieParams = _this.parseCookieParams();
+              _this.routeParams = routeParams;
+              _this.queryParams = _this.parseQueryParams();
+              return _this;
+          }
+          /**
+           * Parse Cookie string
+           * @param cookies
+           */
+          RequestV1.prototype.parseCookieParams = function (cookies) {
+              var cookiesString = cookies ? cookies : (this.headers || {}).cookie || '';
+              return SetCookieParser.parse(cookiesString.split('; '), {
+                  decodeValues: true,
+                  map: true,
+              });
+          };
+          /**
+           * Parse url string
+           * @param url
+           */
+          RequestV1.prototype.parseQueryParams = function (url) {
+              var urlString = url ? url : this.url || '';
+              return parse(urlString, true).query;
+          };
+          return RequestV1;
+      }(IncomingMessage)));
+      var RequestV2 = exports('RequestV2', /** @class */ (function (_super) {
+          __extends(RequestV2, _super);
+          /**
+           * Constructor
+           * @param stream
+           * @param headers
+           * @param options
+           * @param rawHeaders
+           * @param routeParams
+           */
+          function RequestV2(stream, headers, options, rawHeaders, routeParams) {
+              var _this = _super.call(this, stream, headers, options, rawHeaders) || this;
+              _this.cookieParams = _this.parseCookieParams();
+              _this.routeParams = routeParams;
+              _this.queryParams = _this.parseQueryParams();
+              return _this;
+          }
+          /**
+           * Parse Cookie string
+           * @param cookies
+           */
+          RequestV2.prototype.parseCookieParams = function (cookies) {
+              var cookiesString = cookies ? cookies : (this.headers || {}).cookie || '';
+              return SetCookieParser.parse(cookiesString.split('; '), {
+                  decodeValues: true,
+                  map: true,
+              });
+          };
+          /**
+           * Parse url string
+           * @param url
+           */
+          RequestV2.prototype.parseQueryParams = function (url) {
+              var urlString = url ? url : this.url || '';
+              return parse(urlString, true).query;
+          };
+          return RequestV2;
+      }(Http2ServerRequest)));
+
       var MockRequest = exports('MockRequest', /** @class */ (function (_super) {
           __extends(MockRequest, _super);
-          function MockRequest(mock, body) {
-              var _this = _super.call(this, new Socket()) || this;
+          function MockRequest(mock, body, routeParams) {
+              var _this = _super.call(this, new Socket(), routeParams) || this;
               _this.headers = mock.headers;
               _this.method = mock.method;
               _this.url = mock.url;
@@ -1089,11 +1158,13 @@ System.register(['reflect-metadata', 'set-cookie-parser', 'url', '@glasswing/com
                   _this.push(body);
                   _this.push(null);
               }
+              _this.cookieParams = _this.parseCookieParams();
+              _this.queryParams = _this.parseQueryParams();
               return _this;
           }
           return MockRequest;
-      }(IncomingMessage)));
-      var mockReq = exports('mockReq', function (data) {
+      }(RequestV1)));
+      var mockReq = exports('mockReq', function (data, params) {
           var _a;
           return new MockRequest({
               complete: true,
@@ -1109,9 +1180,9 @@ System.register(['reflect-metadata', 'set-cookie-parser', 'url', '@glasswing/com
               httpVersionMinor: 1,
               method: 'GET',
               url: '/test?test=testValue&test2=testValue2',
-          }, JSON.stringify(data));
+          }, JSON.stringify(data), params);
       });
-      var mockReqYaml = exports('mockReqYaml', function (data) {
+      var mockReqYaml = exports('mockReqYaml', function (data, params) {
           var _a;
           return new MockRequest({
               complete: true,
@@ -1127,7 +1198,7 @@ System.register(['reflect-metadata', 'set-cookie-parser', 'url', '@glasswing/com
               httpVersionMinor: 1,
               method: 'GET',
               url: '/test?test=testValue&test2=testValue2',
-          }, YAML.stringify(data));
+          }, YAML.stringify(data), params);
       });
 
       var MockResponse = exports('MockResponse', /** @class */ (function (_super) {

@@ -1,13 +1,15 @@
-import {IncomingHttpHeaders, IncomingMessage} from 'http'
+import http from 'http'
 import {Socket} from 'net'
 import YAML from 'yaml'
 
-import {Request, RequestHeader} from '../_types'
+import {RequestHeader} from '../_types'
+
+import {HttpParams, RequestV1} from '../request'
 
 export interface MockRequestOptions {
   complete: boolean
   connection: Socket
-  headers: IncomingHttpHeaders
+  headers: http.IncomingHttpHeaders
   httpVersion: string
   httpVersionMajor: number
   httpVersionMinor: number
@@ -15,9 +17,9 @@ export interface MockRequestOptions {
   url?: string
 }
 
-export class MockRequest extends IncomingMessage {
-  constructor(mock: MockRequestOptions, body?: string) {
-    super(new Socket())
+export class MockRequest extends RequestV1 {
+  constructor(mock: MockRequestOptions, body?: string, routeParams?: HttpParams) {
+    super(new Socket(), routeParams)
 
     this.headers = mock.headers
     this.method = mock.method
@@ -27,10 +29,13 @@ export class MockRequest extends IncomingMessage {
       this.push(body)
       this.push(null)
     }
+
+    this.cookieParams = this.parseCookieParams()
+    this.queryParams = this.parseQueryParams()
   }
 }
 
-export const mockReq = (data: object): Request =>
+export const mockReq = (data: object, params?: object): RequestV1 =>
   new MockRequest(
     {
       complete: true,
@@ -48,9 +53,10 @@ export const mockReq = (data: object): Request =>
       url: '/test?test=testValue&test2=testValue2',
     },
     JSON.stringify(data),
+    params,
   )
 
-export const mockReqYaml = (data: object): Request =>
+export const mockReqYaml = (data: object, params?: object): RequestV1 =>
   new MockRequest(
     {
       complete: true,
@@ -68,4 +74,5 @@ export const mockReqYaml = (data: object): Request =>
       url: '/test?test=testValue&test2=testValue2',
     },
     YAML.stringify(data),
+    params,
   )

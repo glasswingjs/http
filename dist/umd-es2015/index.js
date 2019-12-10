@@ -1,16 +1,19 @@
 (function (global, factory) {
-  typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports, require('reflect-metadata'), require('set-cookie-parser'), require('url'), require('@glasswing/common'), require('yaml'), require('http'), require('net')) :
-  typeof define === 'function' && define.amd ? define(['exports', 'reflect-metadata', 'set-cookie-parser', 'url', '@glasswing/common', 'yaml', 'http', 'net'], factory) :
-  (global = global || self, factory((global.gw = global.gw || {}, global.gw.http = {}), null, global.SetCookieParser, global.url, global.common, global.YAML, global.http, global.net));
-}(this, (function (exports, reflectMetadata, SetCookieParser, url, common, YAML, http, net) { 'use strict';
+  typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports, require('reflect-metadata'), require('@glasswing/common'), require('yaml'), require('net'), require('http'), require('http2'), require('set-cookie-parser'), require('url')) :
+  typeof define === 'function' && define.amd ? define(['exports', 'reflect-metadata', '@glasswing/common', 'yaml', 'net', 'http', 'http2', 'set-cookie-parser', 'url'], factory) :
+  (global = global || self, factory((global.gw = global.gw || {}, global.gw.http = {}), null, global.common, global.YAML, global.net, global.http, global.http2, global.SetCookieParser, global.url));
+}(this, (function (exports, reflectMetadata, common, YAML, net, http, http2, SetCookieParser, url) { 'use strict';
 
-  SetCookieParser = SetCookieParser && SetCookieParser.hasOwnProperty('default') ? SetCookieParser['default'] : SetCookieParser;
   YAML = YAML && YAML.hasOwnProperty('default') ? YAML['default'] : YAML;
+  SetCookieParser = SetCookieParser && SetCookieParser.hasOwnProperty('default') ? SetCookieParser['default'] : SetCookieParser;
 
   /**
-   * List of HTTP headers, as described on MDN Documentation
-   * @link https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers
+   * HTTP Version
    */
+  (function (Version) {
+      Version["V1"] = "http1";
+      Version["V2"] = "http2";
+  })(exports.Version || (exports.Version = {}));
   (function (RequestHeader) {
       RequestHeader["ACCEPT"] = "Accept";
       RequestHeader["ACCEPT_CH"] = "Accept-CH";
@@ -280,20 +283,6 @@
        */
       RequestMethod["TRACE"] = "trace";
   })(exports.RequestMethod || (exports.RequestMethod = {}));
-  // /**
-  //  * Full list of Request Methods
-  //  */
-  // export type RequestMethod =
-  //   | 'all'
-  //   | 'connect'
-  //   | 'delete'
-  //   | 'get'
-  //   | 'head'
-  //   | 'options'
-  //   | 'patch'
-  //   | 'post'
-  //   | 'put'
-  //   | 'trace'
 
   /*! *****************************************************************************
   Copyright (c) Microsoft Corporation. All rights reserved.
@@ -319,6 +308,10 @@
       });
   }
 
+  (function (ArgumentSource) {
+      ArgumentSource["REQUEST"] = "request";
+      ArgumentSource["RESPONSE"] = "response";
+  })(exports.ArgumentSource || (exports.ArgumentSource = {}));
   /******************************************************************************
    *
    * Helpers
@@ -347,20 +340,11 @@
   const Cookie = (key, value) => {
       return (target, methodKey, parameterIndex) => {
           appendParameterMapper(target, methodKey, parameterIndex, (req) => {
-              const cookiesString = (req.headers || {}).cookie || '';
-              // const cookiesArray: any[] = cookiesString
-              //   .split(';')
-              //   .map((cookie: string) => {
-              //     var parts: string[] = cookie.split('=');
-              //     return { [(parts.shift()||'').trim()]: decodeURI(parts.join('=')), }
-              //   })
-              // const cookies: any = Object.assign({}, ...cookiesArray)
-              const cookies = SetCookieParser.parse(cookiesString.split('; '), {
-                  decodeValues: true,
-                  map: true,
-              });
-              return key ? cookies[key] : cookies;
-          }, 'request');
+              if (!req.cookieParams) {
+                  return null;
+              }
+              return key ? req.cookieParams[key] : req.cookieParams;
+          });
       };
   };
   /**
@@ -373,7 +357,7 @@
       return (target, methodKey, parameterIndex) => {
           appendParameterMapper(target, methodKey, parameterIndex, (req) => {
               return key ? req.headers[key] : req.headers;
-          }, 'request');
+          });
       };
   };
   /**
@@ -392,7 +376,7 @@
    */
   const Param = (key) => {
       return (target, methodKey, parameterIndex) => {
-          appendParameterMapper(target, methodKey, parameterIndex, (params) => (key ? params[key] : params), 'params');
+          appendParameterMapper(target, methodKey, parameterIndex, (req) => key ? req.routeParams[key] : req.routeParams);
       };
   };
   /**
@@ -402,10 +386,7 @@
    */
   const Query = (key) => {
       return (target, methodKey, parameterIndex) => {
-          appendParameterMapper(target, methodKey, parameterIndex, (req) => {
-              const queryData = url.parse(req.url || '', true).query;
-              return key ? queryData[key] : queryData;
-          });
+          appendParameterMapper(target, methodKey, parameterIndex, (req) => key ? req.queryParams[key] : req.queryParams);
       };
   };
   /**
@@ -421,7 +402,7 @@
    */
   const Res = () => {
       return (target, methodKey, parameterIndex) => {
-          appendParameterMapper(target, methodKey, parameterIndex, (res) => res, 'response');
+          appendParameterMapper(target, methodKey, parameterIndex, (res) => res, exports.ArgumentSource.RESPONSE);
       };
   };
   // /**
@@ -462,7 +443,7 @@
    * @param callable
    * @param source
    */
-  const appendParameterMapper = (target, methodName, parameterIndex, callable, source = 'request') => {
+  const appendParameterMapper = (target, methodName, parameterIndex, callable, source = exports.ArgumentSource.REQUEST) => {
       // calculate method (name) descriptor
       const methodDescriptor = methodArgumentsDescriptor(methodName);
       // can't set ParameterDescriptor[] type due to creation of an array of zeros
@@ -839,9 +820,77 @@
       }
   }
 
-  class MockRequest extends http.IncomingMessage {
-      constructor(mock, body) {
-          super(new net.Socket());
+  class RequestV1 extends http.IncomingMessage {
+      /**
+       * Constructor
+       * @param socket
+       * @param routeParams
+       */
+      constructor(socket, routeParams) {
+          super(socket);
+          this.cookieParams = this.parseCookieParams();
+          this.routeParams = routeParams;
+          this.queryParams = this.parseQueryParams();
+      }
+      /**
+       * Parse Cookie string
+       * @param cookies
+       */
+      parseCookieParams(cookies) {
+          const cookiesString = cookies ? cookies : (this.headers || {}).cookie || '';
+          return SetCookieParser.parse(cookiesString.split('; '), {
+              decodeValues: true,
+              map: true,
+          });
+      }
+      /**
+       * Parse url string
+       * @param url
+       */
+      parseQueryParams(url$1) {
+          const urlString = url$1 ? url$1 : this.url || '';
+          return url.parse(urlString, true).query;
+      }
+  }
+  class RequestV2 extends http2.Http2ServerRequest {
+      /**
+       * Constructor
+       * @param stream
+       * @param headers
+       * @param options
+       * @param rawHeaders
+       * @param routeParams
+       */
+      constructor(stream, headers, options, rawHeaders, routeParams) {
+          super(stream, headers, options, rawHeaders);
+          this.cookieParams = this.parseCookieParams();
+          this.routeParams = routeParams;
+          this.queryParams = this.parseQueryParams();
+      }
+      /**
+       * Parse Cookie string
+       * @param cookies
+       */
+      parseCookieParams(cookies) {
+          const cookiesString = cookies ? cookies : (this.headers || {}).cookie || '';
+          return SetCookieParser.parse(cookiesString.split('; '), {
+              decodeValues: true,
+              map: true,
+          });
+      }
+      /**
+       * Parse url string
+       * @param url
+       */
+      parseQueryParams(url$1) {
+          const urlString = url$1 ? url$1 : this.url || '';
+          return url.parse(urlString, true).query;
+      }
+  }
+
+  class MockRequest extends RequestV1 {
+      constructor(mock, body, routeParams) {
+          super(new net.Socket(), routeParams);
           this.headers = mock.headers;
           this.method = mock.method;
           this.url = mock.url;
@@ -849,9 +898,11 @@
               this.push(body);
               this.push(null);
           }
+          this.cookieParams = this.parseCookieParams();
+          this.queryParams = this.parseQueryParams();
       }
   }
-  const mockReq = (data) => new MockRequest({
+  const mockReq = (data, params) => new MockRequest({
       complete: true,
       connection: new net.Socket(),
       headers: {
@@ -865,8 +916,8 @@
       httpVersionMinor: 1,
       method: 'GET',
       url: '/test?test=testValue&test2=testValue2',
-  }, JSON.stringify(data));
-  const mockReqYaml = (data) => new MockRequest({
+  }, JSON.stringify(data), params);
+  const mockReqYaml = (data, params) => new MockRequest({
       complete: true,
       connection: new net.Socket(),
       headers: {
@@ -880,7 +931,7 @@
       httpVersionMinor: 1,
       method: 'GET',
       url: '/test?test=testValue&test2=testValue2',
-  }, YAML.stringify(data));
+  }, YAML.stringify(data), params);
 
   class MockResponse extends http.ServerResponse {
       constructor(req, mock) {
@@ -927,6 +978,8 @@
   exports.Req = Req;
   exports.RequestHeaderFieldsTooLargeException = RequestHeaderFieldsTooLargeException;
   exports.RequestTimeoutException = RequestTimeoutException;
+  exports.RequestV1 = RequestV1;
+  exports.RequestV2 = RequestV2;
   exports.Res = Res;
   exports.RespondWith = RespondWith;
   exports.RespondWithJson = RespondWithJson;

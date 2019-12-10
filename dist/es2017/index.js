@@ -1,11 +1,20 @@
 import 'reflect-metadata';
-import SetCookieParser from 'set-cookie-parser';
-import { parse } from 'url';
 import { extendClassMethod } from '@glasswing/common';
 import YAML from 'yaml';
-import { IncomingMessage, ServerResponse } from 'http';
 import { Socket } from 'net';
+import { IncomingMessage, ServerResponse } from 'http';
+import { Http2ServerRequest } from 'http2';
+import SetCookieParser from 'set-cookie-parser';
+import { parse } from 'url';
 
+/**
+ * HTTP Version
+ */
+var Version;
+(function (Version) {
+    Version["V1"] = "http1";
+    Version["V2"] = "http2";
+})(Version || (Version = {}));
 /**
  * List of HTTP headers, as described on MDN Documentation
  * @link https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers
@@ -296,21 +305,12 @@ var RequestMethod;
      */
     RequestMethod["TRACE"] = "trace";
 })(RequestMethod || (RequestMethod = {}));
-// /**
-//  * Full list of Request Methods
-//  */
-// export type RequestMethod =
-//   | 'all'
-//   | 'connect'
-//   | 'delete'
-//   | 'get'
-//   | 'head'
-//   | 'options'
-//   | 'patch'
-//   | 'post'
-//   | 'put'
-//   | 'trace'
 
+var ArgumentSource;
+(function (ArgumentSource) {
+    ArgumentSource["REQUEST"] = "request";
+    ArgumentSource["RESPONSE"] = "response";
+})(ArgumentSource || (ArgumentSource = {}));
 /******************************************************************************
  *
  * Helpers
@@ -339,20 +339,11 @@ const Body = (key, decoder = JSON.parse) => {
 const Cookie = (key, value) => {
     return (target, methodKey, parameterIndex) => {
         appendParameterMapper(target, methodKey, parameterIndex, (req) => {
-            const cookiesString = (req.headers || {}).cookie || '';
-            // const cookiesArray: any[] = cookiesString
-            //   .split(';')
-            //   .map((cookie: string) => {
-            //     var parts: string[] = cookie.split('=');
-            //     return { [(parts.shift()||'').trim()]: decodeURI(parts.join('=')), }
-            //   })
-            // const cookies: any = Object.assign({}, ...cookiesArray)
-            const cookies = SetCookieParser.parse(cookiesString.split('; '), {
-                decodeValues: true,
-                map: true,
-            });
-            return key ? cookies[key] : cookies;
-        }, 'request');
+            if (!req.cookieParams) {
+                return null;
+            }
+            return key ? req.cookieParams[key] : req.cookieParams;
+        });
     };
 };
 /**
@@ -365,7 +356,7 @@ const Header = (key) => {
     return (target, methodKey, parameterIndex) => {
         appendParameterMapper(target, methodKey, parameterIndex, (req) => {
             return key ? req.headers[key] : req.headers;
-        }, 'request');
+        });
     };
 };
 /**
@@ -384,7 +375,7 @@ const Ip = () => {
  */
 const Param = (key) => {
     return (target, methodKey, parameterIndex) => {
-        appendParameterMapper(target, methodKey, parameterIndex, (params) => (key ? params[key] : params), 'params');
+        appendParameterMapper(target, methodKey, parameterIndex, (req) => key ? req.routeParams[key] : req.routeParams);
     };
 };
 /**
@@ -394,10 +385,7 @@ const Param = (key) => {
  */
 const Query = (key) => {
     return (target, methodKey, parameterIndex) => {
-        appendParameterMapper(target, methodKey, parameterIndex, (req) => {
-            const queryData = parse(req.url || '', true).query;
-            return key ? queryData[key] : queryData;
-        });
+        appendParameterMapper(target, methodKey, parameterIndex, (req) => key ? req.queryParams[key] : req.queryParams);
     };
 };
 /**
@@ -413,7 +401,7 @@ const Req = () => {
  */
 const Res = () => {
     return (target, methodKey, parameterIndex) => {
-        appendParameterMapper(target, methodKey, parameterIndex, (res) => res, 'response');
+        appendParameterMapper(target, methodKey, parameterIndex, (res) => res, ArgumentSource.RESPONSE);
     };
 };
 // /**
@@ -452,7 +440,7 @@ const readRequestBody = async (req) => new Promise((resolve, reject) => {
  * @param callable
  * @param source
  */
-const appendParameterMapper = (target, methodName, parameterIndex, callable, source = 'request') => {
+const appendParameterMapper = (target, methodName, parameterIndex, callable, source = ArgumentSource.REQUEST) => {
     // calculate method (name) descriptor
     const methodDescriptor = methodArgumentsDescriptor(methodName);
     // can't set ParameterDescriptor[] type due to creation of an array of zeros
@@ -829,9 +817,77 @@ class NetworkAuthenticationRequiredException extends HttpException {
     }
 }
 
-class MockRequest extends IncomingMessage {
-    constructor(mock, body) {
-        super(new Socket());
+class RequestV1 extends IncomingMessage {
+    /**
+     * Constructor
+     * @param socket
+     * @param routeParams
+     */
+    constructor(socket, routeParams) {
+        super(socket);
+        this.cookieParams = this.parseCookieParams();
+        this.routeParams = routeParams;
+        this.queryParams = this.parseQueryParams();
+    }
+    /**
+     * Parse Cookie string
+     * @param cookies
+     */
+    parseCookieParams(cookies) {
+        const cookiesString = cookies ? cookies : (this.headers || {}).cookie || '';
+        return SetCookieParser.parse(cookiesString.split('; '), {
+            decodeValues: true,
+            map: true,
+        });
+    }
+    /**
+     * Parse url string
+     * @param url
+     */
+    parseQueryParams(url) {
+        const urlString = url ? url : this.url || '';
+        return parse(urlString, true).query;
+    }
+}
+class RequestV2 extends Http2ServerRequest {
+    /**
+     * Constructor
+     * @param stream
+     * @param headers
+     * @param options
+     * @param rawHeaders
+     * @param routeParams
+     */
+    constructor(stream, headers, options, rawHeaders, routeParams) {
+        super(stream, headers, options, rawHeaders);
+        this.cookieParams = this.parseCookieParams();
+        this.routeParams = routeParams;
+        this.queryParams = this.parseQueryParams();
+    }
+    /**
+     * Parse Cookie string
+     * @param cookies
+     */
+    parseCookieParams(cookies) {
+        const cookiesString = cookies ? cookies : (this.headers || {}).cookie || '';
+        return SetCookieParser.parse(cookiesString.split('; '), {
+            decodeValues: true,
+            map: true,
+        });
+    }
+    /**
+     * Parse url string
+     * @param url
+     */
+    parseQueryParams(url) {
+        const urlString = url ? url : this.url || '';
+        return parse(urlString, true).query;
+    }
+}
+
+class MockRequest extends RequestV1 {
+    constructor(mock, body, routeParams) {
+        super(new Socket(), routeParams);
         this.headers = mock.headers;
         this.method = mock.method;
         this.url = mock.url;
@@ -839,9 +895,11 @@ class MockRequest extends IncomingMessage {
             this.push(body);
             this.push(null);
         }
+        this.cookieParams = this.parseCookieParams();
+        this.queryParams = this.parseQueryParams();
     }
 }
-const mockReq = (data) => new MockRequest({
+const mockReq = (data, params) => new MockRequest({
     complete: true,
     connection: new Socket(),
     headers: {
@@ -855,8 +913,8 @@ const mockReq = (data) => new MockRequest({
     httpVersionMinor: 1,
     method: 'GET',
     url: '/test?test=testValue&test2=testValue2',
-}, JSON.stringify(data));
-const mockReqYaml = (data) => new MockRequest({
+}, JSON.stringify(data), params);
+const mockReqYaml = (data, params) => new MockRequest({
     complete: true,
     connection: new Socket(),
     headers: {
@@ -870,7 +928,7 @@ const mockReqYaml = (data) => new MockRequest({
     httpVersionMinor: 1,
     method: 'GET',
     url: '/test?test=testValue&test2=testValue2',
-}, YAML.stringify(data));
+}, YAML.stringify(data), params);
 
 class MockResponse extends ServerResponse {
     constructor(req, mock) {
@@ -882,4 +940,4 @@ class MockResponse extends ServerResponse {
 }
 const mockRes = (data) => new MockResponse(mockReq(data));
 
-export { BadGatewayException, Body, ConflictException, Cookie, ExpectationFailedException, ForbiddenException, GatewayTimeoutException, GoneException, HTTPVersionNotSupportedException, Header, HttpException, ImateapotException, InsufficientStorageException, InternalServerErrorException, Ip, LengthRequiredException, LoopDetectedException, MethodNotAllowedException, MockRequest, MockResponse, NetworkAuthenticationRequiredException, NotAcceptableException, NotFoundException, NotImplementedException, Param, PayloadTooLargeException, PaymentRequiredException, PreconditionFailedException, PreconditionRequiredException, ProxyAuthenticationRequiredException, Query, RangeNotSatisfiableException, Req, RequestHeader, RequestHeaderFieldsTooLargeException, RequestMethod, RequestTimeoutException, Res, RespondWith, RespondWithJson, RespondWithRaw, RespondWithYaml, ResponseCode, ResponseMessage, ServiceUnavailableException, TooEarlyException, TooManyRequestsException, URITooLongException, UnauthorizedException, UnavailableForLegalReasonsException, UnprocessableEntityException, UnsupportedMediaTypeException, UpgradeRequiredException, VariantAlsoNegotiatesException, methodArgumentsDescriptor, mockReq, mockReqYaml, mockRes };
+export { ArgumentSource, BadGatewayException, Body, ConflictException, Cookie, ExpectationFailedException, ForbiddenException, GatewayTimeoutException, GoneException, HTTPVersionNotSupportedException, Header, HttpException, ImateapotException, InsufficientStorageException, InternalServerErrorException, Ip, LengthRequiredException, LoopDetectedException, MethodNotAllowedException, MockRequest, MockResponse, NetworkAuthenticationRequiredException, NotAcceptableException, NotFoundException, NotImplementedException, Param, PayloadTooLargeException, PaymentRequiredException, PreconditionFailedException, PreconditionRequiredException, ProxyAuthenticationRequiredException, Query, RangeNotSatisfiableException, Req, RequestHeader, RequestHeaderFieldsTooLargeException, RequestMethod, RequestTimeoutException, RequestV1, RequestV2, Res, RespondWith, RespondWithJson, RespondWithRaw, RespondWithYaml, ResponseCode, ResponseMessage, ServiceUnavailableException, TooEarlyException, TooManyRequestsException, URITooLongException, UnauthorizedException, UnavailableForLegalReasonsException, UnprocessableEntityException, UnsupportedMediaTypeException, UpgradeRequiredException, VariantAlsoNegotiatesException, Version, methodArgumentsDescriptor, mockReq, mockReqYaml, mockRes };
