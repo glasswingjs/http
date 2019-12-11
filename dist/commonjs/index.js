@@ -5,290 +5,13 @@ Object.defineProperty(exports, '__esModule', { value: true });
 function _interopDefault (ex) { return (ex && (typeof ex === 'object') && 'default' in ex) ? ex['default'] : ex; }
 
 require('reflect-metadata');
+var http = require('http');
+var SetCookieParser = _interopDefault(require('set-cookie-parser'));
+var url = require('url');
+var http2 = require('http2');
 var common = require('@glasswing/common');
 var YAML = _interopDefault(require('yaml'));
 var net = require('net');
-var http = require('http');
-var http2 = require('http2');
-var SetCookieParser = _interopDefault(require('set-cookie-parser'));
-var url = require('url');
-
-/**
- * HTTP Version
- */
-(function (Version) {
-    Version["V1"] = "http1";
-    Version["V2"] = "http2";
-})(exports.Version || (exports.Version = {}));
-(function (RequestHeader) {
-    RequestHeader["ACCEPT"] = "Accept";
-    RequestHeader["ACCEPT_CH"] = "Accept-CH";
-    RequestHeader["ACCEPT_CH_LIFETIME"] = "Accept-CH-Lifetime";
-    RequestHeader["ACCEPT_CHARSET"] = "Accept-Charset";
-    RequestHeader["ACCEPT_ENCODING"] = "Accept-Encoding";
-    RequestHeader["ACCEPT_LANGUAGE"] = "Accept-Language";
-    RequestHeader["ACCEPT_PATCH"] = "Accept-Patch";
-    RequestHeader["ACCEPT_RANGES"] = "Accept-Ranges";
-    RequestHeader["ACCESS_CONTROL_ALLOW_CREDENTIALS"] = "Access-Control-Allow-Credentials";
-    RequestHeader["ACCESS_CONTROL_ALLOW_HEADERS"] = "Access-Control-Allow-Headers";
-    RequestHeader["ACCESS_CONTROL_ALLOW_METHODS"] = "Access-Control-Allow-Methods";
-    RequestHeader["ACCESS_CONTROL_ALLOW_ORIGIN"] = "Access-Control-Allow-Origin";
-    RequestHeader["ACCESS_CONTROL_EXPOSE_HEADERS"] = "Access-Control-Expose-Headers";
-    RequestHeader["ACCESS_CONTROL_MAX_AGE"] = "Access-Control-Max-Age";
-    RequestHeader["ACCESS_CONTROL_REQUEST_HEADERS"] = "Access-Control-Request-Headers";
-    RequestHeader["ACCESS_CONTROL_REQUEST_METHOD"] = "Access-Control-Request-Method";
-    RequestHeader["AGE"] = "Age";
-    RequestHeader["ALLOW"] = "Allow";
-    RequestHeader["ALT_SVC"] = "Alt-Svc";
-    RequestHeader["AUTHORIZATION"] = "Authorization";
-    RequestHeader["CACHE_CONTROL"] = "Cache-Control";
-    RequestHeader["CLEAR_SITE_DATA"] = "Clear-Site-Data";
-    RequestHeader["CONNECTION"] = "Connection";
-    RequestHeader["CONTENT_DISPOSITION"] = "Content-Disposition";
-    RequestHeader["CONTENT_ENCODING"] = "Content-Encoding";
-    RequestHeader["CONTENT_LANGUAGE"] = "Content-Language";
-    RequestHeader["CONTENT_LENGTH"] = "Content-Length";
-    RequestHeader["CONTENT_LOCATION"] = "Content-Location";
-    RequestHeader["CONTENT_RANGE"] = "Content-Range";
-    RequestHeader["CONTENT_SECURITY_POLICY"] = "Content-Security-Policy";
-    RequestHeader["CONTENT_SECURITY_POLICY_REPORT_ONLY"] = "Content-Security-Policy-Report-Only";
-    RequestHeader["CONTENT_TYPE"] = "Content-Type";
-    RequestHeader["COOKIE"] = "Cookie";
-    RequestHeader["COOKIE2"] = "Cookie2";
-    RequestHeader["CROSS_ORIGIN_RESOURCE_POLICY"] = "Cross-Origin-Resource-Policy";
-    RequestHeader["DNT"] = "DNT";
-    RequestHeader["DPR"] = "DPR";
-    RequestHeader["DATE"] = "Date";
-    RequestHeader["DEVICE_MEMORY"] = "Device-Memory";
-    RequestHeader["DIGEST"] = "Digest";
-    RequestHeader["ETAG"] = "ETag";
-    RequestHeader["EARLY_DATA"] = "Early-Data";
-    RequestHeader["EXPECT"] = "Expect";
-    RequestHeader["EXPECT_CT"] = "Expect-CT";
-    RequestHeader["EXPIRES"] = "Expires";
-    RequestHeader["FEATURE_POLICY"] = "Feature-Policy";
-    RequestHeader["FORWARDED"] = "Forwarded";
-    RequestHeader["FROM"] = "From";
-    RequestHeader["HOST"] = "Host";
-    RequestHeader["IF_MATCH"] = "If-Match";
-    RequestHeader["IF_MODIFIED_SINCE"] = "If-Modified-Since";
-    RequestHeader["IF_NONE_MATCH"] = "If-None-Match";
-    RequestHeader["IF_RANGE"] = "If-Range";
-    RequestHeader["IF_UNMODIFIED_SINCE"] = "If-Unmodified-Since";
-    RequestHeader["INDEX"] = "Index";
-    RequestHeader["KEEP_ALIVE"] = "Keep-Alive";
-    RequestHeader["LARGE_ALLOCATION"] = "Large-Allocation";
-    RequestHeader["LAST_MODIFIED"] = "Last-Modified";
-    RequestHeader["LINK"] = "Link";
-    RequestHeader["LOCATION"] = "Location";
-    RequestHeader["ORIGIN"] = "Origin";
-    RequestHeader["PRAGMA"] = "Pragma";
-    RequestHeader["PROXY_AUTHENTICATE"] = "Proxy-Authenticate";
-    RequestHeader["PROXY_AUTHORIZATION"] = "Proxy-Authorization";
-    RequestHeader["PUBLIC_KEY_PINS"] = "Public-Key-Pins";
-    RequestHeader["PUBLIC_KEY_PINS_REPORT_ONLY"] = "Public-Key-Pins-Report-Only";
-    RequestHeader["RANGE"] = "Range";
-    RequestHeader["REFERER"] = "Referer";
-    RequestHeader["REFERRER_POLICY"] = "Referrer-Policy";
-    RequestHeader["RETRY_AFTER"] = "Retry-After";
-    RequestHeader["SAVE_DATA"] = "Save-Data";
-    RequestHeader["SEC_WEBSOCKET_ACCEPT"] = "Sec-WebSocket-Accept";
-    RequestHeader["SERVER"] = "Server";
-    RequestHeader["SERVER_TIMING"] = "Server-Timing";
-    RequestHeader["SET_COOKIE"] = "Set-Cookie";
-    RequestHeader["SET_COOKIE2"] = "Set-Cookie2";
-    RequestHeader["SOURCEMAP"] = "SourceMap";
-    RequestHeader["STRICT_TRANSPORT_SECURITY"] = "Strict-Transport-Security";
-    RequestHeader["TE"] = "TE";
-    RequestHeader["TIMING_ALLOW_ORIGIN"] = "Timing-Allow-Origin";
-    RequestHeader["TK"] = "Tk";
-    RequestHeader["TRAILER"] = "Trailer";
-    RequestHeader["TRANSFER_ENCODING"] = "Transfer-Encoding";
-    RequestHeader["UPGRADE_INSECURE_REQUESTS"] = "Upgrade-Insecure-Requests";
-    RequestHeader["USER_AGENT"] = "User-Agent";
-    RequestHeader["VARY"] = "Vary";
-    RequestHeader["VIA"] = "Via";
-    RequestHeader["WWW_AUTHENTICATE"] = "WWW-Authenticate";
-    RequestHeader["WANT_DIGEST"] = "Want-Digest";
-    RequestHeader["WARNING"] = "Warning";
-    RequestHeader["X_CONTENT_TYPE_OPTIONS"] = "X-Content-Type-Options";
-    RequestHeader["X_DNS_PREFETCH_CONTROL"] = "X-DNS-Prefetch-Control";
-    RequestHeader["X_FORWARDED_FOR"] = "X-Forwarded-For";
-    RequestHeader["X_FORWARDED_HOST"] = "X-Forwarded-Host";
-    RequestHeader["X_FORWARDED_PROTO"] = "X-Forwarded-Proto";
-    RequestHeader["X_FRAME_OPTIONS"] = "X-Frame-Options";
-    RequestHeader["X_XSS_PROTECTION"] = "X-XSS-Protection";
-})(exports.RequestHeader || (exports.RequestHeader = {}));
-(function (ResponseCode) {
-    ResponseCode[ResponseCode["CONTINUE"] = 100] = "CONTINUE";
-    ResponseCode[ResponseCode["SWITCHING_PROTOCOLS"] = 101] = "SWITCHING_PROTOCOLS";
-    ResponseCode[ResponseCode["PROCESSING"] = 102] = "PROCESSING";
-    ResponseCode[ResponseCode["EARLY_HINTS"] = 103] = "EARLY_HINTS";
-    ResponseCode[ResponseCode["OK"] = 200] = "OK";
-    ResponseCode[ResponseCode["CREATED"] = 201] = "CREATED";
-    ResponseCode[ResponseCode["ACCEPTED"] = 202] = "ACCEPTED";
-    ResponseCode[ResponseCode["NON_AUTHORITATIVE_INFORMATION"] = 203] = "NON_AUTHORITATIVE_INFORMATION";
-    ResponseCode[ResponseCode["NO_CONTENT"] = 204] = "NO_CONTENT";
-    ResponseCode[ResponseCode["RESET_CONTENT"] = 205] = "RESET_CONTENT";
-    ResponseCode[ResponseCode["PARTIAL_CONTENT"] = 206] = "PARTIAL_CONTENT";
-    ResponseCode[ResponseCode["MULTI_STATUS"] = 207] = "MULTI_STATUS";
-    ResponseCode[ResponseCode["ALREADY_REPORTED"] = 208] = "ALREADY_REPORTED";
-    ResponseCode[ResponseCode["IM_USED"] = 226] = "IM_USED";
-    ResponseCode[ResponseCode["MULTIPLE_CHOICES"] = 300] = "MULTIPLE_CHOICES";
-    ResponseCode[ResponseCode["MOVED_PERMANENTLY"] = 301] = "MOVED_PERMANENTLY";
-    ResponseCode[ResponseCode["FOUND"] = 302] = "FOUND";
-    ResponseCode[ResponseCode["SEE_OTHER"] = 303] = "SEE_OTHER";
-    ResponseCode[ResponseCode["NOT_MODIFIED"] = 304] = "NOT_MODIFIED";
-    ResponseCode[ResponseCode["USE_PROXY"] = 305] = "USE_PROXY";
-    ResponseCode[ResponseCode["RESERVED"] = 306] = "RESERVED";
-    ResponseCode[ResponseCode["TEMPORARY_REDIRECT"] = 307] = "TEMPORARY_REDIRECT";
-    ResponseCode[ResponseCode["PERMANENTLY_REDIRECT"] = 308] = "PERMANENTLY_REDIRECT";
-    ResponseCode[ResponseCode["BAD_REQUEST"] = 400] = "BAD_REQUEST";
-    ResponseCode[ResponseCode["UNAUTHORIZED"] = 401] = "UNAUTHORIZED";
-    ResponseCode[ResponseCode["PAYMENT_REQUIRED"] = 402] = "PAYMENT_REQUIRED";
-    ResponseCode[ResponseCode["FORBIDDEN"] = 403] = "FORBIDDEN";
-    ResponseCode[ResponseCode["NOT_FOUND"] = 404] = "NOT_FOUND";
-    ResponseCode[ResponseCode["METHOD_NOT_ALLOWED"] = 405] = "METHOD_NOT_ALLOWED";
-    ResponseCode[ResponseCode["NOT_ACCEPTABLE"] = 406] = "NOT_ACCEPTABLE";
-    ResponseCode[ResponseCode["PROXY_AUTHENTICATION_REQUIRED"] = 407] = "PROXY_AUTHENTICATION_REQUIRED";
-    ResponseCode[ResponseCode["REQUEST_TIMEOUT"] = 408] = "REQUEST_TIMEOUT";
-    ResponseCode[ResponseCode["CONFLICT"] = 409] = "CONFLICT";
-    ResponseCode[ResponseCode["GONE"] = 410] = "GONE";
-    ResponseCode[ResponseCode["LENGTH_REQUIRED"] = 411] = "LENGTH_REQUIRED";
-    ResponseCode[ResponseCode["PRECONDITION_FAILED"] = 412] = "PRECONDITION_FAILED";
-    ResponseCode[ResponseCode["PAYLOAD_TOO_LARGE"] = 413] = "PAYLOAD_TOO_LARGE";
-    ResponseCode[ResponseCode["URI_TOO_LONG"] = 414] = "URI_TOO_LONG";
-    ResponseCode[ResponseCode["UNSUPPORTED_MEDIA_TYPE"] = 415] = "UNSUPPORTED_MEDIA_TYPE";
-    ResponseCode[ResponseCode["RANGE_NOT_SATISFIABLE"] = 416] = "RANGE_NOT_SATISFIABLE";
-    ResponseCode[ResponseCode["EXPECTATION_FAILED"] = 417] = "EXPECTATION_FAILED";
-    ResponseCode[ResponseCode["I_AM_A_TEAPOT"] = 418] = "I_AM_A_TEAPOT";
-    ResponseCode[ResponseCode["MISDIRECTED_REQUEST"] = 421] = "MISDIRECTED_REQUEST";
-    ResponseCode[ResponseCode["UNPROCESSABLE_ENTITY"] = 422] = "UNPROCESSABLE_ENTITY";
-    ResponseCode[ResponseCode["LOCKED"] = 423] = "LOCKED";
-    ResponseCode[ResponseCode["FAILED_DEPENDENCY"] = 424] = "FAILED_DEPENDENCY";
-    ResponseCode[ResponseCode["TOO_EARLY"] = 425] = "TOO_EARLY";
-    ResponseCode[ResponseCode["UPGRADE_REQUIRED"] = 426] = "UPGRADE_REQUIRED";
-    ResponseCode[ResponseCode["PRECONDITION_REQUIRED"] = 428] = "PRECONDITION_REQUIRED";
-    ResponseCode[ResponseCode["TOO_MANY_REQUESTS"] = 429] = "TOO_MANY_REQUESTS";
-    ResponseCode[ResponseCode["REQUEST_HEADER_FIELDS_TOO_LARGE"] = 431] = "REQUEST_HEADER_FIELDS_TOO_LARGE";
-    ResponseCode[ResponseCode["UNAVAILABLE_FOR_LEGAL_REASONS"] = 451] = "UNAVAILABLE_FOR_LEGAL_REASONS";
-    ResponseCode[ResponseCode["INTERNAL_SERVER_ERROR"] = 500] = "INTERNAL_SERVER_ERROR";
-    ResponseCode[ResponseCode["NOT_IMPLEMENTED"] = 501] = "NOT_IMPLEMENTED";
-    ResponseCode[ResponseCode["BAD_GATEWAY"] = 502] = "BAD_GATEWAY";
-    ResponseCode[ResponseCode["SERVICE_UNAVAILABLE"] = 503] = "SERVICE_UNAVAILABLE";
-    ResponseCode[ResponseCode["GATEWAY_TIMEOUT"] = 504] = "GATEWAY_TIMEOUT";
-    ResponseCode[ResponseCode["HTTP_VERSION_NOT_SUPPORTED"] = 505] = "HTTP_VERSION_NOT_SUPPORTED";
-    ResponseCode[ResponseCode["VARIANT_ALSO_NEGOTIATES"] = 506] = "VARIANT_ALSO_NEGOTIATES";
-    ResponseCode[ResponseCode["INSUFFICIENT_STORAGE"] = 507] = "INSUFFICIENT_STORAGE";
-    ResponseCode[ResponseCode["LOOP_DETECTED"] = 508] = "LOOP_DETECTED";
-    ResponseCode[ResponseCode["NOT_EXTENDED"] = 510] = "NOT_EXTENDED";
-    ResponseCode[ResponseCode["NETWORK_AUTHENTICATION_REQUIRED"] = 511] = "NETWORK_AUTHENTICATION_REQUIRED";
-})(exports.ResponseCode || (exports.ResponseCode = {}));
-(function (ResponseMessage) {
-    ResponseMessage["CONTINUE"] = "100 Continue";
-    ResponseMessage["SWITCHING_PROTOCOLS"] = "101 Switching Protocols";
-    ResponseMessage["PROCESSING"] = "102 Processing";
-    ResponseMessage["EARLY_HINTS"] = "103 Early Hints";
-    ResponseMessage["OK"] = "200 OK";
-    ResponseMessage["CREATED"] = "201 Created";
-    ResponseMessage["ACCEPTED"] = "202 Accepted";
-    ResponseMessage["NON_AUTHORITATIVE_INFORMATION"] = "203 Non-Authoritative Information";
-    ResponseMessage["NO_CONTENT"] = "204 No Content";
-    ResponseMessage["RESET_CONTENT"] = "205 Reset Content";
-    ResponseMessage["PARTIAL_CONTENT"] = "206 Partial Content";
-    ResponseMessage["MULTI_STATUS"] = "207 Multi-Status";
-    ResponseMessage["IM_USED"] = "226 IM Used";
-    ResponseMessage["ALREADY_REPORTED"] = "208 Already Reported";
-    ResponseMessage["MULTIPLE_CHOICES"] = "300 Multiple Choices";
-    ResponseMessage["MOVED_PERMANENTLY"] = "301 Moved Permanently";
-    ResponseMessage["FOUND"] = "302 Found";
-    ResponseMessage["SEE_OTHER"] = "303 See Other";
-    ResponseMessage["NOT_MODIFIED"] = "304 Not Modified";
-    ResponseMessage["USE_PROXY"] = "305 Use Proxy";
-    ResponseMessage["RESERVED"] = "306 unused";
-    ResponseMessage["TEMPORARY_REDIRECT"] = "307 Temporary Redirect";
-    ResponseMessage["PERMANENT_REDIRECT"] = "308 Permanent Redirect";
-    ResponseMessage["BAD_REQUEST"] = "400 Bad Request";
-    ResponseMessage["UNAUTHORIZED"] = "401 Unauthorized";
-    ResponseMessage["PAYMENT_REQUIRED"] = "402 Payment Required";
-    ResponseMessage["FORBIDDEN"] = "403 Forbidden";
-    ResponseMessage["NOT_FOUND"] = "404 Not Found";
-    ResponseMessage["METHOD_NOT_ALLOWED"] = "405 Method Not Allowed";
-    ResponseMessage["NOT_ACCEPTABLE"] = "406 Not Acceptable";
-    ResponseMessage["PROXY_AUTHENTICATION_REQUIRED"] = "407 Proxy Authentication Required";
-    ResponseMessage["REQUEST_TIMEOUT"] = "408 Request Timeout";
-    ResponseMessage["CONFLICT"] = "409 Conflict";
-    ResponseMessage["GONE"] = "410 Gone";
-    ResponseMessage["LENGTH_REQUIRED"] = "411 Length Required";
-    ResponseMessage["PRECONDITION_FAILED"] = "412 Precondition Failed";
-    ResponseMessage["PAYLOAD_TOO_LARGE"] = "413 Payload Too Large";
-    ResponseMessage["URI_TOO_LONG"] = "414 URI Too Long";
-    ResponseMessage["UNSUPPORTED_MEDIA_TYPE"] = "415 Unsupported Media Type";
-    ResponseMessage["RANGE_NOT_SATISFIABLE"] = "416 Range Not Satisfiable";
-    ResponseMessage["EXPECTATION_FAILED"] = "417 Expectation Failed";
-    ResponseMessage["I_AM_A_TEAPOT"] = "418 I'm a teapot";
-    ResponseMessage["MISDIRECTED_REQUEST"] = "421 Misdirected Request";
-    ResponseMessage["UNPROCESSABLE_ENTITY"] = "422 Unprocessable Entity";
-    ResponseMessage["LOCKED"] = "423 Locked";
-    ResponseMessage["FAILED_DEPENDENCY"] = "424 Failed Dependency";
-    ResponseMessage["TOO_EARLY"] = "425 Too Early";
-    ResponseMessage["UPGRADE_REQUIRED"] = "426 Upgrade Required";
-    ResponseMessage["PRECONDITION_REQUIRED"] = "428 Precondition Required";
-    ResponseMessage["TOO_MANY_REQUESTS"] = "429 Too Many Requests";
-    ResponseMessage["REQUEST_HEADER_FIELDS_TOO_LARGE"] = "431 Request Header Fields Too Large";
-    ResponseMessage["UNAVAILABLE_FOR_LEGAL_REASONS"] = "451 Unavailable For Legal Reasons";
-    ResponseMessage["INTERNAL_SERVER_ERROR"] = "500 Internal Server Error";
-    ResponseMessage["NOT_IMPLEMENTED"] = "501 Not Implemented";
-    ResponseMessage["BAD_GATEWAY"] = "502 Bad Gateway";
-    ResponseMessage["SERVICE_UNAVAILABLE"] = "503 Service Unavailable";
-    ResponseMessage["GATEWAY_TIMEOUT"] = "504 Gateway Timeout";
-    ResponseMessage["HTTP_VERSION_NOT_SUPPORTED"] = "505 HTTP Version Not Supported";
-    ResponseMessage["VARIANT_ALSO_NEGOTIATES"] = "506 Variant Also Negotiates";
-    ResponseMessage["INSUFFICIENT_STORAGE"] = "507 Insufficient Storage";
-    ResponseMessage["LOOP_DETECTED"] = "508 Loop Detected";
-    ResponseMessage["NOT_EXTENDED"] = "510 Not Extended";
-    ResponseMessage["NETWORK_AUTHENTICATION_REQUIRED"] = "511 Network Authentication Required";
-})(exports.ResponseMessage || (exports.ResponseMessage = {}));
-(function (RequestMethod) {
-    RequestMethod["ALL"] = "all";
-    /**
-     * The CONNECT method establishes a tunnel to the server identified by the target  resource.
-     */
-    RequestMethod["CONNECT"] = "connect";
-    /**
-     * The DELETE method deletes the specified resource.
-     */
-    RequestMethod["DELETE"] = "delete";
-    /**
-     * The GET method requests a representation of the specified resource. Requests using GET should only retrieve data.
-     */
-    RequestMethod["GET"] = "get";
-    /**
-     * The HEAD method asks for a response identical to that of a GET request, but without the response body.
-     */
-    RequestMethod["HEAD"] = "head";
-    /**
-     * The OPTIONS method is used to describe the communication options for the target resource.
-     */
-    RequestMethod["OPTIONS"] = "options";
-    /**
-     * The PATCH method is used to apply partial modifications to a resource.
-     */
-    RequestMethod["PATCH"] = "patch";
-    /**
-     * The POST method is used to submit an entity to the specified resource, often causing a change in state or side
-     * effects on the server.
-     */
-    RequestMethod["POST"] = "post";
-    /**
-     * The PUT method replaces all current representations of the target resource with the request payload.
-     */
-    RequestMethod["PUT"] = "put";
-    /**
-     * The TRACE method performs a message loop-back test along the path to the target resource.
-     */
-    RequestMethod["TRACE"] = "trace";
-})(exports.RequestMethod || (exports.RequestMethod = {}));
 
 /*! *****************************************************************************
 Copyright (c) Microsoft Corporation. All rights reserved.
@@ -364,10 +87,237 @@ function __spreadArrays() {
     return r;
 }
 
-(function (ArgumentSource) {
-    ArgumentSource["REQUEST"] = "request";
-    ArgumentSource["RESPONSE"] = "response";
-})(exports.ArgumentSource || (exports.ArgumentSource = {}));
+var HttpRequest = /** @class */ (function (_super) {
+    __extends(HttpRequest, _super);
+    /**
+     * Constructor
+     * @param socket
+     * @param routeParams
+     */
+    function HttpRequest(socket, routeParams) {
+        var _this = _super.call(this, socket) || this;
+        _this.cookieParams = _this.parseCookieParams();
+        _this.routeParams = routeParams;
+        _this.queryParams = _this.parseQueryParams();
+        return _this;
+    }
+    /**
+     * Parse Cookie string
+     * @param cookies
+     */
+    HttpRequest.prototype.parseCookieParams = function (cookies) {
+        var cookiesString = cookies ? cookies : (this.headers || {}).cookie || '';
+        return SetCookieParser.parse(cookiesString.split('; '), {
+            decodeValues: true,
+            map: true,
+        });
+    };
+    /**
+     * Parse url string
+     * @param url
+     */
+    HttpRequest.prototype.parseQueryParams = function (url$1) {
+        var urlString = url$1 ? url$1 : this.url || '';
+        return url.parse(urlString, true).query;
+    };
+    /**
+     *
+     */
+    HttpRequest.prototype.toHttpRequest = function () {
+        return this;
+    };
+    return HttpRequest;
+}(http.IncomingMessage));
+
+var Http2Request = /** @class */ (function (_super) {
+    __extends(Http2Request, _super);
+    /**
+     * Constructor
+     * @param stream
+     * @param headers
+     * @param options
+     * @param rawHeaders
+     * @param routeParams
+     */
+    function Http2Request(stream, headers, options, rawHeaders, routeParams) {
+        var _this = _super.call(this, stream, headers, options, rawHeaders) || this;
+        _this.cookieParams = _this.parseCookieParams();
+        _this.routeParams = routeParams;
+        _this.queryParams = _this.parseQueryParams();
+        return _this;
+    }
+    /**
+     * Parse Cookie string
+     * @param cookies
+     */
+    Http2Request.prototype.parseCookieParams = function (cookies) {
+        var cookiesString = cookies ? cookies : (this.headers || {}).cookie || '';
+        return SetCookieParser.parse(cookiesString.split('; '), {
+            decodeValues: true,
+            map: true,
+        });
+    };
+    /**
+     * Parse url string
+     * @param url
+     */
+    Http2Request.prototype.parseQueryParams = function (url$1) {
+        var urlString = url$1 ? url$1 : this.url || '';
+        return url.parse(urlString, true).query;
+    };
+    /**
+     *
+     */
+    Http2Request.prototype.toHttpRequest = function () {
+        return this;
+    };
+    return Http2Request;
+}(http2.Http2ServerRequest));
+
+(function (HttpRequestHeader) {
+    HttpRequestHeader["ACCEPT"] = "Accept";
+    HttpRequestHeader["ACCEPT_CH"] = "Accept-CH";
+    HttpRequestHeader["ACCEPT_CH_LIFETIME"] = "Accept-CH-Lifetime";
+    HttpRequestHeader["ACCEPT_CHARSET"] = "Accept-Charset";
+    HttpRequestHeader["ACCEPT_ENCODING"] = "Accept-Encoding";
+    HttpRequestHeader["ACCEPT_LANGUAGE"] = "Accept-Language";
+    HttpRequestHeader["ACCEPT_PATCH"] = "Accept-Patch";
+    HttpRequestHeader["ACCEPT_RANGES"] = "Accept-Ranges";
+    HttpRequestHeader["ACCESS_CONTROL_ALLOW_CREDENTIALS"] = "Access-Control-Allow-Credentials";
+    HttpRequestHeader["ACCESS_CONTROL_ALLOW_HEADERS"] = "Access-Control-Allow-Headers";
+    HttpRequestHeader["ACCESS_CONTROL_ALLOW_METHODS"] = "Access-Control-Allow-Methods";
+    HttpRequestHeader["ACCESS_CONTROL_ALLOW_ORIGIN"] = "Access-Control-Allow-Origin";
+    HttpRequestHeader["ACCESS_CONTROL_EXPOSE_HEADERS"] = "Access-Control-Expose-Headers";
+    HttpRequestHeader["ACCESS_CONTROL_MAX_AGE"] = "Access-Control-Max-Age";
+    HttpRequestHeader["ACCESS_CONTROL_REQUEST_HEADERS"] = "Access-Control-Request-Headers";
+    HttpRequestHeader["ACCESS_CONTROL_REQUEST_METHOD"] = "Access-Control-Request-Method";
+    HttpRequestHeader["AGE"] = "Age";
+    HttpRequestHeader["ALLOW"] = "Allow";
+    HttpRequestHeader["ALT_SVC"] = "Alt-Svc";
+    HttpRequestHeader["AUTHORIZATION"] = "Authorization";
+    HttpRequestHeader["CACHE_CONTROL"] = "Cache-Control";
+    HttpRequestHeader["CLEAR_SITE_DATA"] = "Clear-Site-Data";
+    HttpRequestHeader["CONNECTION"] = "Connection";
+    HttpRequestHeader["CONTENT_DISPOSITION"] = "Content-Disposition";
+    HttpRequestHeader["CONTENT_ENCODING"] = "Content-Encoding";
+    HttpRequestHeader["CONTENT_LANGUAGE"] = "Content-Language";
+    HttpRequestHeader["CONTENT_LENGTH"] = "Content-Length";
+    HttpRequestHeader["CONTENT_LOCATION"] = "Content-Location";
+    HttpRequestHeader["CONTENT_RANGE"] = "Content-Range";
+    HttpRequestHeader["CONTENT_SECURITY_POLICY"] = "Content-Security-Policy";
+    HttpRequestHeader["CONTENT_SECURITY_POLICY_REPORT_ONLY"] = "Content-Security-Policy-Report-Only";
+    HttpRequestHeader["CONTENT_TYPE"] = "Content-Type";
+    HttpRequestHeader["COOKIE"] = "Cookie";
+    HttpRequestHeader["COOKIE2"] = "Cookie2";
+    HttpRequestHeader["CROSS_ORIGIN_RESOURCE_POLICY"] = "Cross-Origin-Resource-Policy";
+    HttpRequestHeader["DNT"] = "DNT";
+    HttpRequestHeader["DPR"] = "DPR";
+    HttpRequestHeader["DATE"] = "Date";
+    HttpRequestHeader["DEVICE_MEMORY"] = "Device-Memory";
+    HttpRequestHeader["DIGEST"] = "Digest";
+    HttpRequestHeader["ETAG"] = "ETag";
+    HttpRequestHeader["EARLY_DATA"] = "Early-Data";
+    HttpRequestHeader["EXPECT"] = "Expect";
+    HttpRequestHeader["EXPECT_CT"] = "Expect-CT";
+    HttpRequestHeader["EXPIRES"] = "Expires";
+    HttpRequestHeader["FEATURE_POLICY"] = "Feature-Policy";
+    HttpRequestHeader["FORWARDED"] = "Forwarded";
+    HttpRequestHeader["FROM"] = "From";
+    HttpRequestHeader["HOST"] = "Host";
+    HttpRequestHeader["IF_MATCH"] = "If-Match";
+    HttpRequestHeader["IF_MODIFIED_SINCE"] = "If-Modified-Since";
+    HttpRequestHeader["IF_NONE_MATCH"] = "If-None-Match";
+    HttpRequestHeader["IF_RANGE"] = "If-Range";
+    HttpRequestHeader["IF_UNMODIFIED_SINCE"] = "If-Unmodified-Since";
+    HttpRequestHeader["INDEX"] = "Index";
+    HttpRequestHeader["KEEP_ALIVE"] = "Keep-Alive";
+    HttpRequestHeader["LARGE_ALLOCATION"] = "Large-Allocation";
+    HttpRequestHeader["LAST_MODIFIED"] = "Last-Modified";
+    HttpRequestHeader["LINK"] = "Link";
+    HttpRequestHeader["LOCATION"] = "Location";
+    HttpRequestHeader["ORIGIN"] = "Origin";
+    HttpRequestHeader["PRAGMA"] = "Pragma";
+    HttpRequestHeader["PROXY_AUTHENTICATE"] = "Proxy-Authenticate";
+    HttpRequestHeader["PROXY_AUTHORIZATION"] = "Proxy-Authorization";
+    HttpRequestHeader["PUBLIC_KEY_PINS"] = "Public-Key-Pins";
+    HttpRequestHeader["PUBLIC_KEY_PINS_REPORT_ONLY"] = "Public-Key-Pins-Report-Only";
+    HttpRequestHeader["RANGE"] = "Range";
+    HttpRequestHeader["REFERER"] = "Referer";
+    HttpRequestHeader["REFERRER_POLICY"] = "Referrer-Policy";
+    HttpRequestHeader["RETRY_AFTER"] = "Retry-After";
+    HttpRequestHeader["SAVE_DATA"] = "Save-Data";
+    HttpRequestHeader["SEC_WEBSOCKET_ACCEPT"] = "Sec-WebSocket-Accept";
+    HttpRequestHeader["SERVER"] = "Server";
+    HttpRequestHeader["SERVER_TIMING"] = "Server-Timing";
+    HttpRequestHeader["SET_COOKIE"] = "Set-Cookie";
+    HttpRequestHeader["SET_COOKIE2"] = "Set-Cookie2";
+    HttpRequestHeader["SOURCEMAP"] = "SourceMap";
+    HttpRequestHeader["STRICT_TRANSPORT_SECURITY"] = "Strict-Transport-Security";
+    HttpRequestHeader["TE"] = "TE";
+    HttpRequestHeader["TIMING_ALLOW_ORIGIN"] = "Timing-Allow-Origin";
+    HttpRequestHeader["TK"] = "Tk";
+    HttpRequestHeader["TRAILER"] = "Trailer";
+    HttpRequestHeader["TRANSFER_ENCODING"] = "Transfer-Encoding";
+    HttpRequestHeader["UPGRADE_INSECURE_REQUESTS"] = "Upgrade-Insecure-Requests";
+    HttpRequestHeader["USER_AGENT"] = "User-Agent";
+    HttpRequestHeader["VARY"] = "Vary";
+    HttpRequestHeader["VIA"] = "Via";
+    HttpRequestHeader["WWW_AUTHENTICATE"] = "WWW-Authenticate";
+    HttpRequestHeader["WANT_DIGEST"] = "Want-Digest";
+    HttpRequestHeader["WARNING"] = "Warning";
+    HttpRequestHeader["X_CONTENT_TYPE_OPTIONS"] = "X-Content-Type-Options";
+    HttpRequestHeader["X_DNS_PREFETCH_CONTROL"] = "X-DNS-Prefetch-Control";
+    HttpRequestHeader["X_FORWARDED_FOR"] = "X-Forwarded-For";
+    HttpRequestHeader["X_FORWARDED_HOST"] = "X-Forwarded-Host";
+    HttpRequestHeader["X_FORWARDED_PROTO"] = "X-Forwarded-Proto";
+    HttpRequestHeader["X_FRAME_OPTIONS"] = "X-Frame-Options";
+    HttpRequestHeader["X_XSS_PROTECTION"] = "X-XSS-Protection";
+})(exports.HttpRequestHeader || (exports.HttpRequestHeader = {}));
+(function (HttpRequestMethod) {
+    HttpRequestMethod["ALL"] = "all";
+    /**
+     * The CONNECT method establishes a tunnel to the server identified by the target  resource.
+     */
+    HttpRequestMethod["CONNECT"] = "connect";
+    /**
+     * The DELETE method deletes the specified resource.
+     */
+    HttpRequestMethod["DELETE"] = "delete";
+    /**
+     * The GET method requests a representation of the specified resource. Requests using GET should only retrieve data.
+     */
+    HttpRequestMethod["GET"] = "get";
+    /**
+     * The HEAD method asks for a response identical to that of a GET request, but without the response body.
+     */
+    HttpRequestMethod["HEAD"] = "head";
+    /**
+     * The OPTIONS method is used to describe the communication options for the target resource.
+     */
+    HttpRequestMethod["OPTIONS"] = "options";
+    /**
+     * The PATCH method is used to apply partial modifications to a resource.
+     */
+    HttpRequestMethod["PATCH"] = "patch";
+    /**
+     * The POST method is used to submit an entity to the specified resource, often causing a change in state or side
+     * effects on the server.
+     */
+    HttpRequestMethod["POST"] = "post";
+    /**
+     * The PUT method replaces all current representations of the target resource with the request payload.
+     */
+    HttpRequestMethod["PUT"] = "put";
+    /**
+     * The TRACE method performs a message loop-back test along the path to the target resource.
+     */
+    HttpRequestMethod["TRACE"] = "trace";
+})(exports.HttpRequestMethod || (exports.HttpRequestMethod = {}));
+
+(function (HttpArgumentSource) {
+    HttpArgumentSource["REQUEST"] = "request";
+    HttpArgumentSource["RESPONSE"] = "response";
+})(exports.HttpArgumentSource || (exports.HttpArgumentSource = {}));
 /******************************************************************************
  *
  * Helpers
@@ -424,7 +374,7 @@ var Header = function (key) {
  */
 var Ip = function () {
     return function (target, methodKey, parameterIndex) {
-        appendParameterMapper(target, methodKey, parameterIndex, function (req) { return req.headers[exports.RequestHeader.X_FORWARDED_FOR.toLowerCase()]; });
+        appendParameterMapper(target, methodKey, parameterIndex, function (req) { return req.headers[exports.HttpRequestHeader.X_FORWARDED_FOR.toLowerCase()]; });
     };
 };
 /**
@@ -465,12 +415,9 @@ var Req = function () {
  */
 var Res = function () {
     return function (target, methodKey, parameterIndex) {
-        appendParameterMapper(target, methodKey, parameterIndex, function (res) { return res; }, exports.ArgumentSource.RESPONSE);
+        appendParameterMapper(target, methodKey, parameterIndex, function (res) { return res; }, exports.HttpArgumentSource.RESPONSE);
     };
 };
-// /**
-//  * @Redirect(url: string, code: number = 301)
-//  */
 /******************************************************************************
  *
  * Helpers
@@ -520,7 +467,7 @@ var readRequestBody = function (req) { return __awaiter(void 0, void 0, void 0, 
  * @param source
  */
 var appendParameterMapper = function (target, methodName, parameterIndex, callable, source) {
-    if (source === void 0) { source = exports.ArgumentSource.REQUEST; }
+    if (source === void 0) { source = exports.HttpArgumentSource.REQUEST; }
     // calculate method (name) descriptor
     var methodDescriptor = methodArgumentsDescriptor(methodName);
     // can't set ParameterDescriptor[] type due to creation of an array of zeros
@@ -605,6 +552,153 @@ var RespondWithYaml = function () {
     return RespondWith.apply(void 0, __spreadArrays([YAML.stringify], args));
 };
 
+var HttpResponse = /** @class */ (function (_super) {
+    __extends(HttpResponse, _super);
+    function HttpResponse() {
+        return _super !== null && _super.apply(this, arguments) || this;
+    }
+    return HttpResponse;
+}(http.ServerResponse));
+
+var Http2Response = /** @class */ (function (_super) {
+    __extends(Http2Response, _super);
+    function Http2Response() {
+        return _super !== null && _super.apply(this, arguments) || this;
+    }
+    return Http2Response;
+}(http2.Http2ServerResponse));
+
+(function (HttpResponseCode) {
+    HttpResponseCode[HttpResponseCode["CONTINUE"] = 100] = "CONTINUE";
+    HttpResponseCode[HttpResponseCode["SWITCHING_PROTOCOLS"] = 101] = "SWITCHING_PROTOCOLS";
+    HttpResponseCode[HttpResponseCode["PROCESSING"] = 102] = "PROCESSING";
+    HttpResponseCode[HttpResponseCode["EARLY_HINTS"] = 103] = "EARLY_HINTS";
+    HttpResponseCode[HttpResponseCode["OK"] = 200] = "OK";
+    HttpResponseCode[HttpResponseCode["CREATED"] = 201] = "CREATED";
+    HttpResponseCode[HttpResponseCode["ACCEPTED"] = 202] = "ACCEPTED";
+    HttpResponseCode[HttpResponseCode["NON_AUTHORITATIVE_INFORMATION"] = 203] = "NON_AUTHORITATIVE_INFORMATION";
+    HttpResponseCode[HttpResponseCode["NO_CONTENT"] = 204] = "NO_CONTENT";
+    HttpResponseCode[HttpResponseCode["RESET_CONTENT"] = 205] = "RESET_CONTENT";
+    HttpResponseCode[HttpResponseCode["PARTIAL_CONTENT"] = 206] = "PARTIAL_CONTENT";
+    HttpResponseCode[HttpResponseCode["MULTI_STATUS"] = 207] = "MULTI_STATUS";
+    HttpResponseCode[HttpResponseCode["ALREADY_REPORTED"] = 208] = "ALREADY_REPORTED";
+    HttpResponseCode[HttpResponseCode["IM_USED"] = 226] = "IM_USED";
+    HttpResponseCode[HttpResponseCode["MULTIPLE_CHOICES"] = 300] = "MULTIPLE_CHOICES";
+    HttpResponseCode[HttpResponseCode["MOVED_PERMANENTLY"] = 301] = "MOVED_PERMANENTLY";
+    HttpResponseCode[HttpResponseCode["FOUND"] = 302] = "FOUND";
+    HttpResponseCode[HttpResponseCode["SEE_OTHER"] = 303] = "SEE_OTHER";
+    HttpResponseCode[HttpResponseCode["NOT_MODIFIED"] = 304] = "NOT_MODIFIED";
+    HttpResponseCode[HttpResponseCode["USE_PROXY"] = 305] = "USE_PROXY";
+    HttpResponseCode[HttpResponseCode["RESERVED"] = 306] = "RESERVED";
+    HttpResponseCode[HttpResponseCode["TEMPORARY_REDIRECT"] = 307] = "TEMPORARY_REDIRECT";
+    HttpResponseCode[HttpResponseCode["PERMANENTLY_REDIRECT"] = 308] = "PERMANENTLY_REDIRECT";
+    HttpResponseCode[HttpResponseCode["BAD_REQUEST"] = 400] = "BAD_REQUEST";
+    HttpResponseCode[HttpResponseCode["UNAUTHORIZED"] = 401] = "UNAUTHORIZED";
+    HttpResponseCode[HttpResponseCode["PAYMENT_REQUIRED"] = 402] = "PAYMENT_REQUIRED";
+    HttpResponseCode[HttpResponseCode["FORBIDDEN"] = 403] = "FORBIDDEN";
+    HttpResponseCode[HttpResponseCode["NOT_FOUND"] = 404] = "NOT_FOUND";
+    HttpResponseCode[HttpResponseCode["METHOD_NOT_ALLOWED"] = 405] = "METHOD_NOT_ALLOWED";
+    HttpResponseCode[HttpResponseCode["NOT_ACCEPTABLE"] = 406] = "NOT_ACCEPTABLE";
+    HttpResponseCode[HttpResponseCode["PROXY_AUTHENTICATION_REQUIRED"] = 407] = "PROXY_AUTHENTICATION_REQUIRED";
+    HttpResponseCode[HttpResponseCode["REQUEST_TIMEOUT"] = 408] = "REQUEST_TIMEOUT";
+    HttpResponseCode[HttpResponseCode["CONFLICT"] = 409] = "CONFLICT";
+    HttpResponseCode[HttpResponseCode["GONE"] = 410] = "GONE";
+    HttpResponseCode[HttpResponseCode["LENGTH_REQUIRED"] = 411] = "LENGTH_REQUIRED";
+    HttpResponseCode[HttpResponseCode["PRECONDITION_FAILED"] = 412] = "PRECONDITION_FAILED";
+    HttpResponseCode[HttpResponseCode["PAYLOAD_TOO_LARGE"] = 413] = "PAYLOAD_TOO_LARGE";
+    HttpResponseCode[HttpResponseCode["URI_TOO_LONG"] = 414] = "URI_TOO_LONG";
+    HttpResponseCode[HttpResponseCode["UNSUPPORTED_MEDIA_TYPE"] = 415] = "UNSUPPORTED_MEDIA_TYPE";
+    HttpResponseCode[HttpResponseCode["RANGE_NOT_SATISFIABLE"] = 416] = "RANGE_NOT_SATISFIABLE";
+    HttpResponseCode[HttpResponseCode["EXPECTATION_FAILED"] = 417] = "EXPECTATION_FAILED";
+    HttpResponseCode[HttpResponseCode["I_AM_A_TEAPOT"] = 418] = "I_AM_A_TEAPOT";
+    HttpResponseCode[HttpResponseCode["MISDIRECTED_REQUEST"] = 421] = "MISDIRECTED_REQUEST";
+    HttpResponseCode[HttpResponseCode["UNPROCESSABLE_ENTITY"] = 422] = "UNPROCESSABLE_ENTITY";
+    HttpResponseCode[HttpResponseCode["LOCKED"] = 423] = "LOCKED";
+    HttpResponseCode[HttpResponseCode["FAILED_DEPENDENCY"] = 424] = "FAILED_DEPENDENCY";
+    HttpResponseCode[HttpResponseCode["TOO_EARLY"] = 425] = "TOO_EARLY";
+    HttpResponseCode[HttpResponseCode["UPGRADE_REQUIRED"] = 426] = "UPGRADE_REQUIRED";
+    HttpResponseCode[HttpResponseCode["PRECONDITION_REQUIRED"] = 428] = "PRECONDITION_REQUIRED";
+    HttpResponseCode[HttpResponseCode["TOO_MANY_REQUESTS"] = 429] = "TOO_MANY_REQUESTS";
+    HttpResponseCode[HttpResponseCode["REQUEST_HEADER_FIELDS_TOO_LARGE"] = 431] = "REQUEST_HEADER_FIELDS_TOO_LARGE";
+    HttpResponseCode[HttpResponseCode["UNAVAILABLE_FOR_LEGAL_REASONS"] = 451] = "UNAVAILABLE_FOR_LEGAL_REASONS";
+    HttpResponseCode[HttpResponseCode["INTERNAL_SERVER_ERROR"] = 500] = "INTERNAL_SERVER_ERROR";
+    HttpResponseCode[HttpResponseCode["NOT_IMPLEMENTED"] = 501] = "NOT_IMPLEMENTED";
+    HttpResponseCode[HttpResponseCode["BAD_GATEWAY"] = 502] = "BAD_GATEWAY";
+    HttpResponseCode[HttpResponseCode["SERVICE_UNAVAILABLE"] = 503] = "SERVICE_UNAVAILABLE";
+    HttpResponseCode[HttpResponseCode["GATEWAY_TIMEOUT"] = 504] = "GATEWAY_TIMEOUT";
+    HttpResponseCode[HttpResponseCode["HTTP_VERSION_NOT_SUPPORTED"] = 505] = "HTTP_VERSION_NOT_SUPPORTED";
+    HttpResponseCode[HttpResponseCode["VARIANT_ALSO_NEGOTIATES"] = 506] = "VARIANT_ALSO_NEGOTIATES";
+    HttpResponseCode[HttpResponseCode["INSUFFICIENT_STORAGE"] = 507] = "INSUFFICIENT_STORAGE";
+    HttpResponseCode[HttpResponseCode["LOOP_DETECTED"] = 508] = "LOOP_DETECTED";
+    HttpResponseCode[HttpResponseCode["NOT_EXTENDED"] = 510] = "NOT_EXTENDED";
+    HttpResponseCode[HttpResponseCode["NETWORK_AUTHENTICATION_REQUIRED"] = 511] = "NETWORK_AUTHENTICATION_REQUIRED";
+})(exports.HttpResponseCode || (exports.HttpResponseCode = {}));
+(function (HttpResponseMessage) {
+    HttpResponseMessage["CONTINUE"] = "100 Continue";
+    HttpResponseMessage["SWITCHING_PROTOCOLS"] = "101 Switching Protocols";
+    HttpResponseMessage["PROCESSING"] = "102 Processing";
+    HttpResponseMessage["EARLY_HINTS"] = "103 Early Hints";
+    HttpResponseMessage["OK"] = "200 OK";
+    HttpResponseMessage["CREATED"] = "201 Created";
+    HttpResponseMessage["ACCEPTED"] = "202 Accepted";
+    HttpResponseMessage["NON_AUTHORITATIVE_INFORMATION"] = "203 Non-Authoritative Information";
+    HttpResponseMessage["NO_CONTENT"] = "204 No Content";
+    HttpResponseMessage["RESET_CONTENT"] = "205 Reset Content";
+    HttpResponseMessage["PARTIAL_CONTENT"] = "206 Partial Content";
+    HttpResponseMessage["MULTI_STATUS"] = "207 Multi-Status";
+    HttpResponseMessage["IM_USED"] = "226 IM Used";
+    HttpResponseMessage["ALREADY_REPORTED"] = "208 Already Reported";
+    HttpResponseMessage["MULTIPLE_CHOICES"] = "300 Multiple Choices";
+    HttpResponseMessage["MOVED_PERMANENTLY"] = "301 Moved Permanently";
+    HttpResponseMessage["FOUND"] = "302 Found";
+    HttpResponseMessage["SEE_OTHER"] = "303 See Other";
+    HttpResponseMessage["NOT_MODIFIED"] = "304 Not Modified";
+    HttpResponseMessage["USE_PROXY"] = "305 Use Proxy";
+    HttpResponseMessage["RESERVED"] = "306 unused";
+    HttpResponseMessage["TEMPORARY_REDIRECT"] = "307 Temporary Redirect";
+    HttpResponseMessage["PERMANENT_REDIRECT"] = "308 Permanent Redirect";
+    HttpResponseMessage["BAD_REQUEST"] = "400 Bad Request";
+    HttpResponseMessage["UNAUTHORIZED"] = "401 Unauthorized";
+    HttpResponseMessage["PAYMENT_REQUIRED"] = "402 Payment Required";
+    HttpResponseMessage["FORBIDDEN"] = "403 Forbidden";
+    HttpResponseMessage["NOT_FOUND"] = "404 Not Found";
+    HttpResponseMessage["METHOD_NOT_ALLOWED"] = "405 Method Not Allowed";
+    HttpResponseMessage["NOT_ACCEPTABLE"] = "406 Not Acceptable";
+    HttpResponseMessage["PROXY_AUTHENTICATION_REQUIRED"] = "407 Proxy Authentication Required";
+    HttpResponseMessage["REQUEST_TIMEOUT"] = "408 Request Timeout";
+    HttpResponseMessage["CONFLICT"] = "409 Conflict";
+    HttpResponseMessage["GONE"] = "410 Gone";
+    HttpResponseMessage["LENGTH_REQUIRED"] = "411 Length Required";
+    HttpResponseMessage["PRECONDITION_FAILED"] = "412 Precondition Failed";
+    HttpResponseMessage["PAYLOAD_TOO_LARGE"] = "413 Payload Too Large";
+    HttpResponseMessage["URI_TOO_LONG"] = "414 URI Too Long";
+    HttpResponseMessage["UNSUPPORTED_MEDIA_TYPE"] = "415 Unsupported Media Type";
+    HttpResponseMessage["RANGE_NOT_SATISFIABLE"] = "416 Range Not Satisfiable";
+    HttpResponseMessage["EXPECTATION_FAILED"] = "417 Expectation Failed";
+    HttpResponseMessage["I_AM_A_TEAPOT"] = "418 I'm a teapot";
+    HttpResponseMessage["MISDIRECTED_REQUEST"] = "421 Misdirected Request";
+    HttpResponseMessage["UNPROCESSABLE_ENTITY"] = "422 Unprocessable Entity";
+    HttpResponseMessage["LOCKED"] = "423 Locked";
+    HttpResponseMessage["FAILED_DEPENDENCY"] = "424 Failed Dependency";
+    HttpResponseMessage["TOO_EARLY"] = "425 Too Early";
+    HttpResponseMessage["UPGRADE_REQUIRED"] = "426 Upgrade Required";
+    HttpResponseMessage["PRECONDITION_REQUIRED"] = "428 Precondition Required";
+    HttpResponseMessage["TOO_MANY_REQUESTS"] = "429 Too Many Requests";
+    HttpResponseMessage["REQUEST_HEADER_FIELDS_TOO_LARGE"] = "431 Request Header Fields Too Large";
+    HttpResponseMessage["UNAVAILABLE_FOR_LEGAL_REASONS"] = "451 Unavailable For Legal Reasons";
+    HttpResponseMessage["INTERNAL_SERVER_ERROR"] = "500 Internal Server Error";
+    HttpResponseMessage["NOT_IMPLEMENTED"] = "501 Not Implemented";
+    HttpResponseMessage["BAD_GATEWAY"] = "502 Bad Gateway";
+    HttpResponseMessage["SERVICE_UNAVAILABLE"] = "503 Service Unavailable";
+    HttpResponseMessage["GATEWAY_TIMEOUT"] = "504 Gateway Timeout";
+    HttpResponseMessage["HTTP_VERSION_NOT_SUPPORTED"] = "505 HTTP Version Not Supported";
+    HttpResponseMessage["VARIANT_ALSO_NEGOTIATES"] = "506 Variant Also Negotiates";
+    HttpResponseMessage["INSUFFICIENT_STORAGE"] = "507 Insufficient Storage";
+    HttpResponseMessage["LOOP_DETECTED"] = "508 Loop Detected";
+    HttpResponseMessage["NOT_EXTENDED"] = "510 Not Extended";
+    HttpResponseMessage["NETWORK_AUTHENTICATION_REQUIRED"] = "511 Network Authentication Required";
+})(exports.HttpResponseMessage || (exports.HttpResponseMessage = {}));
+
 /**
  * @link https://github.com/nestjs/nest/blob/master/packages/common/exceptions/http.exception.ts
  */
@@ -654,8 +748,8 @@ var HttpException = /** @class */ (function (_super) {
 var UnauthorizedException = /** @class */ (function (_super) {
     __extends(UnauthorizedException, _super);
     function UnauthorizedException(message, error) {
-        if (error === void 0) { error = exports.ResponseMessage.UNAUTHORIZED; }
-        return _super.call(this, HttpException.createBody(message, error, exports.ResponseCode.UNAUTHORIZED), exports.ResponseCode.UNAUTHORIZED) || this;
+        if (error === void 0) { error = exports.HttpResponseMessage.UNAUTHORIZED; }
+        return _super.call(this, HttpException.createBody(message, error, exports.HttpResponseCode.UNAUTHORIZED), exports.HttpResponseCode.UNAUTHORIZED) || this;
     }
     return UnauthorizedException;
 }(HttpException));
@@ -665,8 +759,8 @@ var UnauthorizedException = /** @class */ (function (_super) {
 var PaymentRequiredException = /** @class */ (function (_super) {
     __extends(PaymentRequiredException, _super);
     function PaymentRequiredException(message, error) {
-        if (error === void 0) { error = exports.ResponseMessage.PAYMENT_REQUIRED; }
-        return _super.call(this, HttpException.createBody(message, error, exports.ResponseCode.PAYMENT_REQUIRED), exports.ResponseCode.PAYMENT_REQUIRED) || this;
+        if (error === void 0) { error = exports.HttpResponseMessage.PAYMENT_REQUIRED; }
+        return _super.call(this, HttpException.createBody(message, error, exports.HttpResponseCode.PAYMENT_REQUIRED), exports.HttpResponseCode.PAYMENT_REQUIRED) || this;
     }
     return PaymentRequiredException;
 }(HttpException));
@@ -676,8 +770,8 @@ var PaymentRequiredException = /** @class */ (function (_super) {
 var ForbiddenException = /** @class */ (function (_super) {
     __extends(ForbiddenException, _super);
     function ForbiddenException(message, error) {
-        if (error === void 0) { error = exports.ResponseMessage.FORBIDDEN; }
-        return _super.call(this, HttpException.createBody(message, error, exports.ResponseCode.FORBIDDEN), exports.ResponseCode.FORBIDDEN) || this;
+        if (error === void 0) { error = exports.HttpResponseMessage.FORBIDDEN; }
+        return _super.call(this, HttpException.createBody(message, error, exports.HttpResponseCode.FORBIDDEN), exports.HttpResponseCode.FORBIDDEN) || this;
     }
     return ForbiddenException;
 }(HttpException));
@@ -687,8 +781,8 @@ var ForbiddenException = /** @class */ (function (_super) {
 var NotFoundException = /** @class */ (function (_super) {
     __extends(NotFoundException, _super);
     function NotFoundException(message, error) {
-        if (error === void 0) { error = exports.ResponseMessage.NOT_FOUND; }
-        return _super.call(this, HttpException.createBody(message, error, exports.ResponseCode.NOT_FOUND), exports.ResponseCode.NOT_FOUND) || this;
+        if (error === void 0) { error = exports.HttpResponseMessage.NOT_FOUND; }
+        return _super.call(this, HttpException.createBody(message, error, exports.HttpResponseCode.NOT_FOUND), exports.HttpResponseCode.NOT_FOUND) || this;
     }
     return NotFoundException;
 }(HttpException));
@@ -698,8 +792,8 @@ var NotFoundException = /** @class */ (function (_super) {
 var MethodNotAllowedException = /** @class */ (function (_super) {
     __extends(MethodNotAllowedException, _super);
     function MethodNotAllowedException(message, error) {
-        if (error === void 0) { error = exports.ResponseMessage.METHOD_NOT_ALLOWED; }
-        return _super.call(this, HttpException.createBody(message, error, exports.ResponseCode.METHOD_NOT_ALLOWED), exports.ResponseCode.METHOD_NOT_ALLOWED) || this;
+        if (error === void 0) { error = exports.HttpResponseMessage.METHOD_NOT_ALLOWED; }
+        return _super.call(this, HttpException.createBody(message, error, exports.HttpResponseCode.METHOD_NOT_ALLOWED), exports.HttpResponseCode.METHOD_NOT_ALLOWED) || this;
     }
     return MethodNotAllowedException;
 }(HttpException));
@@ -709,8 +803,8 @@ var MethodNotAllowedException = /** @class */ (function (_super) {
 var NotAcceptableException = /** @class */ (function (_super) {
     __extends(NotAcceptableException, _super);
     function NotAcceptableException(message, error) {
-        if (error === void 0) { error = exports.ResponseMessage.NOT_ACCEPTABLE; }
-        return _super.call(this, HttpException.createBody(message, error, exports.ResponseCode.NOT_ACCEPTABLE), exports.ResponseCode.NOT_ACCEPTABLE) || this;
+        if (error === void 0) { error = exports.HttpResponseMessage.NOT_ACCEPTABLE; }
+        return _super.call(this, HttpException.createBody(message, error, exports.HttpResponseCode.NOT_ACCEPTABLE), exports.HttpResponseCode.NOT_ACCEPTABLE) || this;
     }
     return NotAcceptableException;
 }(HttpException));
@@ -720,8 +814,8 @@ var NotAcceptableException = /** @class */ (function (_super) {
 var ProxyAuthenticationRequiredException = /** @class */ (function (_super) {
     __extends(ProxyAuthenticationRequiredException, _super);
     function ProxyAuthenticationRequiredException(message, error) {
-        if (error === void 0) { error = exports.ResponseMessage.PROXY_AUTHENTICATION_REQUIRED; }
-        return _super.call(this, HttpException.createBody(message, error, exports.ResponseCode.PROXY_AUTHENTICATION_REQUIRED), exports.ResponseCode.PROXY_AUTHENTICATION_REQUIRED) || this;
+        if (error === void 0) { error = exports.HttpResponseMessage.PROXY_AUTHENTICATION_REQUIRED; }
+        return _super.call(this, HttpException.createBody(message, error, exports.HttpResponseCode.PROXY_AUTHENTICATION_REQUIRED), exports.HttpResponseCode.PROXY_AUTHENTICATION_REQUIRED) || this;
     }
     return ProxyAuthenticationRequiredException;
 }(HttpException));
@@ -731,8 +825,8 @@ var ProxyAuthenticationRequiredException = /** @class */ (function (_super) {
 var RequestTimeoutException = /** @class */ (function (_super) {
     __extends(RequestTimeoutException, _super);
     function RequestTimeoutException(message, error) {
-        if (error === void 0) { error = exports.ResponseMessage.REQUEST_TIMEOUT; }
-        return _super.call(this, HttpException.createBody(message, error, exports.ResponseCode.REQUEST_TIMEOUT), exports.ResponseCode.REQUEST_TIMEOUT) || this;
+        if (error === void 0) { error = exports.HttpResponseMessage.REQUEST_TIMEOUT; }
+        return _super.call(this, HttpException.createBody(message, error, exports.HttpResponseCode.REQUEST_TIMEOUT), exports.HttpResponseCode.REQUEST_TIMEOUT) || this;
     }
     return RequestTimeoutException;
 }(HttpException));
@@ -742,8 +836,8 @@ var RequestTimeoutException = /** @class */ (function (_super) {
 var ConflictException = /** @class */ (function (_super) {
     __extends(ConflictException, _super);
     function ConflictException(message, error) {
-        if (error === void 0) { error = exports.ResponseMessage.CONFLICT; }
-        return _super.call(this, HttpException.createBody(message, error, exports.ResponseCode.CONFLICT), exports.ResponseCode.CONFLICT) || this;
+        if (error === void 0) { error = exports.HttpResponseMessage.CONFLICT; }
+        return _super.call(this, HttpException.createBody(message, error, exports.HttpResponseCode.CONFLICT), exports.HttpResponseCode.CONFLICT) || this;
     }
     return ConflictException;
 }(HttpException));
@@ -753,8 +847,8 @@ var ConflictException = /** @class */ (function (_super) {
 var GoneException = /** @class */ (function (_super) {
     __extends(GoneException, _super);
     function GoneException(message, error) {
-        if (error === void 0) { error = exports.ResponseMessage.GONE; }
-        return _super.call(this, HttpException.createBody(message, error, exports.ResponseCode.GONE), exports.ResponseCode.GONE) || this;
+        if (error === void 0) { error = exports.HttpResponseMessage.GONE; }
+        return _super.call(this, HttpException.createBody(message, error, exports.HttpResponseCode.GONE), exports.HttpResponseCode.GONE) || this;
     }
     return GoneException;
 }(HttpException));
@@ -764,8 +858,8 @@ var GoneException = /** @class */ (function (_super) {
 var LengthRequiredException = /** @class */ (function (_super) {
     __extends(LengthRequiredException, _super);
     function LengthRequiredException(message, error) {
-        if (error === void 0) { error = exports.ResponseMessage.LENGTH_REQUIRED; }
-        return _super.call(this, HttpException.createBody(message, error, exports.ResponseCode.LENGTH_REQUIRED), exports.ResponseCode.LENGTH_REQUIRED) || this;
+        if (error === void 0) { error = exports.HttpResponseMessage.LENGTH_REQUIRED; }
+        return _super.call(this, HttpException.createBody(message, error, exports.HttpResponseCode.LENGTH_REQUIRED), exports.HttpResponseCode.LENGTH_REQUIRED) || this;
     }
     return LengthRequiredException;
 }(HttpException));
@@ -775,8 +869,8 @@ var LengthRequiredException = /** @class */ (function (_super) {
 var PreconditionFailedException = /** @class */ (function (_super) {
     __extends(PreconditionFailedException, _super);
     function PreconditionFailedException(message, error) {
-        if (error === void 0) { error = exports.ResponseMessage.PRECONDITION_FAILED; }
-        return _super.call(this, HttpException.createBody(message, error, exports.ResponseCode.PRECONDITION_FAILED), exports.ResponseCode.PRECONDITION_FAILED) || this;
+        if (error === void 0) { error = exports.HttpResponseMessage.PRECONDITION_FAILED; }
+        return _super.call(this, HttpException.createBody(message, error, exports.HttpResponseCode.PRECONDITION_FAILED), exports.HttpResponseCode.PRECONDITION_FAILED) || this;
     }
     return PreconditionFailedException;
 }(HttpException));
@@ -786,8 +880,8 @@ var PreconditionFailedException = /** @class */ (function (_super) {
 var PayloadTooLargeException = /** @class */ (function (_super) {
     __extends(PayloadTooLargeException, _super);
     function PayloadTooLargeException(message, error) {
-        if (error === void 0) { error = exports.ResponseMessage.PAYLOAD_TOO_LARGE; }
-        return _super.call(this, HttpException.createBody(message, error, exports.ResponseCode.PAYLOAD_TOO_LARGE), exports.ResponseCode.PAYLOAD_TOO_LARGE) || this;
+        if (error === void 0) { error = exports.HttpResponseMessage.PAYLOAD_TOO_LARGE; }
+        return _super.call(this, HttpException.createBody(message, error, exports.HttpResponseCode.PAYLOAD_TOO_LARGE), exports.HttpResponseCode.PAYLOAD_TOO_LARGE) || this;
     }
     return PayloadTooLargeException;
 }(HttpException));
@@ -797,8 +891,8 @@ var PayloadTooLargeException = /** @class */ (function (_super) {
 var URITooLongException = /** @class */ (function (_super) {
     __extends(URITooLongException, _super);
     function URITooLongException(message, error) {
-        if (error === void 0) { error = exports.ResponseMessage.URI_TOO_LONG; }
-        return _super.call(this, HttpException.createBody(message, error, exports.ResponseCode.URI_TOO_LONG), exports.ResponseCode.URI_TOO_LONG) || this;
+        if (error === void 0) { error = exports.HttpResponseMessage.URI_TOO_LONG; }
+        return _super.call(this, HttpException.createBody(message, error, exports.HttpResponseCode.URI_TOO_LONG), exports.HttpResponseCode.URI_TOO_LONG) || this;
     }
     return URITooLongException;
 }(HttpException));
@@ -808,8 +902,8 @@ var URITooLongException = /** @class */ (function (_super) {
 var UnsupportedMediaTypeException = /** @class */ (function (_super) {
     __extends(UnsupportedMediaTypeException, _super);
     function UnsupportedMediaTypeException(message, error) {
-        if (error === void 0) { error = exports.ResponseMessage.UNSUPPORTED_MEDIA_TYPE; }
-        return _super.call(this, HttpException.createBody(message, error, exports.ResponseCode.UNSUPPORTED_MEDIA_TYPE), exports.ResponseCode.UNSUPPORTED_MEDIA_TYPE) || this;
+        if (error === void 0) { error = exports.HttpResponseMessage.UNSUPPORTED_MEDIA_TYPE; }
+        return _super.call(this, HttpException.createBody(message, error, exports.HttpResponseCode.UNSUPPORTED_MEDIA_TYPE), exports.HttpResponseCode.UNSUPPORTED_MEDIA_TYPE) || this;
     }
     return UnsupportedMediaTypeException;
 }(HttpException));
@@ -819,8 +913,8 @@ var UnsupportedMediaTypeException = /** @class */ (function (_super) {
 var RangeNotSatisfiableException = /** @class */ (function (_super) {
     __extends(RangeNotSatisfiableException, _super);
     function RangeNotSatisfiableException(message, error) {
-        if (error === void 0) { error = exports.ResponseMessage.RANGE_NOT_SATISFIABLE; }
-        return _super.call(this, HttpException.createBody(message, error, exports.ResponseCode.RANGE_NOT_SATISFIABLE), exports.ResponseCode.RANGE_NOT_SATISFIABLE) || this;
+        if (error === void 0) { error = exports.HttpResponseMessage.RANGE_NOT_SATISFIABLE; }
+        return _super.call(this, HttpException.createBody(message, error, exports.HttpResponseCode.RANGE_NOT_SATISFIABLE), exports.HttpResponseCode.RANGE_NOT_SATISFIABLE) || this;
     }
     return RangeNotSatisfiableException;
 }(HttpException));
@@ -830,8 +924,8 @@ var RangeNotSatisfiableException = /** @class */ (function (_super) {
 var ExpectationFailedException = /** @class */ (function (_super) {
     __extends(ExpectationFailedException, _super);
     function ExpectationFailedException(message, error) {
-        if (error === void 0) { error = exports.ResponseMessage.EXPECTATION_FAILED; }
-        return _super.call(this, HttpException.createBody(message, error, exports.ResponseCode.EXPECTATION_FAILED), exports.ResponseCode.EXPECTATION_FAILED) || this;
+        if (error === void 0) { error = exports.HttpResponseMessage.EXPECTATION_FAILED; }
+        return _super.call(this, HttpException.createBody(message, error, exports.HttpResponseCode.EXPECTATION_FAILED), exports.HttpResponseCode.EXPECTATION_FAILED) || this;
     }
     return ExpectationFailedException;
 }(HttpException));
@@ -841,8 +935,8 @@ var ExpectationFailedException = /** @class */ (function (_super) {
 var ImateapotException = /** @class */ (function (_super) {
     __extends(ImateapotException, _super);
     function ImateapotException(message, error) {
-        if (error === void 0) { error = exports.ResponseMessage.I_AM_A_TEAPOT; }
-        return _super.call(this, HttpException.createBody(message, error, exports.ResponseCode.I_AM_A_TEAPOT), exports.ResponseCode.I_AM_A_TEAPOT) || this;
+        if (error === void 0) { error = exports.HttpResponseMessage.I_AM_A_TEAPOT; }
+        return _super.call(this, HttpException.createBody(message, error, exports.HttpResponseCode.I_AM_A_TEAPOT), exports.HttpResponseCode.I_AM_A_TEAPOT) || this;
     }
     return ImateapotException;
 }(HttpException));
@@ -852,8 +946,8 @@ var ImateapotException = /** @class */ (function (_super) {
 var UnprocessableEntityException = /** @class */ (function (_super) {
     __extends(UnprocessableEntityException, _super);
     function UnprocessableEntityException(message, error) {
-        if (error === void 0) { error = exports.ResponseMessage.UNPROCESSABLE_ENTITY; }
-        return _super.call(this, HttpException.createBody(message, error, exports.ResponseCode.UNPROCESSABLE_ENTITY), exports.ResponseCode.UNPROCESSABLE_ENTITY) || this;
+        if (error === void 0) { error = exports.HttpResponseMessage.UNPROCESSABLE_ENTITY; }
+        return _super.call(this, HttpException.createBody(message, error, exports.HttpResponseCode.UNPROCESSABLE_ENTITY), exports.HttpResponseCode.UNPROCESSABLE_ENTITY) || this;
     }
     return UnprocessableEntityException;
 }(HttpException));
@@ -863,8 +957,8 @@ var UnprocessableEntityException = /** @class */ (function (_super) {
 var TooEarlyException = /** @class */ (function (_super) {
     __extends(TooEarlyException, _super);
     function TooEarlyException(message, error) {
-        if (error === void 0) { error = exports.ResponseMessage.TOO_EARLY; }
-        return _super.call(this, HttpException.createBody(message, error, exports.ResponseCode.TOO_EARLY), exports.ResponseCode.TOO_EARLY) || this;
+        if (error === void 0) { error = exports.HttpResponseMessage.TOO_EARLY; }
+        return _super.call(this, HttpException.createBody(message, error, exports.HttpResponseCode.TOO_EARLY), exports.HttpResponseCode.TOO_EARLY) || this;
     }
     return TooEarlyException;
 }(HttpException));
@@ -874,8 +968,8 @@ var TooEarlyException = /** @class */ (function (_super) {
 var UpgradeRequiredException = /** @class */ (function (_super) {
     __extends(UpgradeRequiredException, _super);
     function UpgradeRequiredException(message, error) {
-        if (error === void 0) { error = exports.ResponseMessage.UPGRADE_REQUIRED; }
-        return _super.call(this, HttpException.createBody(message, error, exports.ResponseCode.UPGRADE_REQUIRED), exports.ResponseCode.UPGRADE_REQUIRED) || this;
+        if (error === void 0) { error = exports.HttpResponseMessage.UPGRADE_REQUIRED; }
+        return _super.call(this, HttpException.createBody(message, error, exports.HttpResponseCode.UPGRADE_REQUIRED), exports.HttpResponseCode.UPGRADE_REQUIRED) || this;
     }
     return UpgradeRequiredException;
 }(HttpException));
@@ -885,8 +979,8 @@ var UpgradeRequiredException = /** @class */ (function (_super) {
 var PreconditionRequiredException = /** @class */ (function (_super) {
     __extends(PreconditionRequiredException, _super);
     function PreconditionRequiredException(message, error) {
-        if (error === void 0) { error = exports.ResponseMessage.PRECONDITION_REQUIRED; }
-        return _super.call(this, HttpException.createBody(message, error, exports.ResponseCode.PRECONDITION_REQUIRED), exports.ResponseCode.PRECONDITION_REQUIRED) || this;
+        if (error === void 0) { error = exports.HttpResponseMessage.PRECONDITION_REQUIRED; }
+        return _super.call(this, HttpException.createBody(message, error, exports.HttpResponseCode.PRECONDITION_REQUIRED), exports.HttpResponseCode.PRECONDITION_REQUIRED) || this;
     }
     return PreconditionRequiredException;
 }(HttpException));
@@ -896,8 +990,8 @@ var PreconditionRequiredException = /** @class */ (function (_super) {
 var TooManyRequestsException = /** @class */ (function (_super) {
     __extends(TooManyRequestsException, _super);
     function TooManyRequestsException(message, error) {
-        if (error === void 0) { error = exports.ResponseMessage.TOO_MANY_REQUESTS; }
-        return _super.call(this, HttpException.createBody(message, error, exports.ResponseCode.TOO_MANY_REQUESTS), exports.ResponseCode.TOO_MANY_REQUESTS) || this;
+        if (error === void 0) { error = exports.HttpResponseMessage.TOO_MANY_REQUESTS; }
+        return _super.call(this, HttpException.createBody(message, error, exports.HttpResponseCode.TOO_MANY_REQUESTS), exports.HttpResponseCode.TOO_MANY_REQUESTS) || this;
     }
     return TooManyRequestsException;
 }(HttpException));
@@ -907,8 +1001,8 @@ var TooManyRequestsException = /** @class */ (function (_super) {
 var RequestHeaderFieldsTooLargeException = /** @class */ (function (_super) {
     __extends(RequestHeaderFieldsTooLargeException, _super);
     function RequestHeaderFieldsTooLargeException(message, error) {
-        if (error === void 0) { error = exports.ResponseMessage.REQUEST_HEADER_FIELDS_TOO_LARGE; }
-        return _super.call(this, HttpException.createBody(message, error, exports.ResponseCode.REQUEST_HEADER_FIELDS_TOO_LARGE), exports.ResponseCode.REQUEST_HEADER_FIELDS_TOO_LARGE) || this;
+        if (error === void 0) { error = exports.HttpResponseMessage.REQUEST_HEADER_FIELDS_TOO_LARGE; }
+        return _super.call(this, HttpException.createBody(message, error, exports.HttpResponseCode.REQUEST_HEADER_FIELDS_TOO_LARGE), exports.HttpResponseCode.REQUEST_HEADER_FIELDS_TOO_LARGE) || this;
     }
     return RequestHeaderFieldsTooLargeException;
 }(HttpException));
@@ -918,8 +1012,8 @@ var RequestHeaderFieldsTooLargeException = /** @class */ (function (_super) {
 var UnavailableForLegalReasonsException = /** @class */ (function (_super) {
     __extends(UnavailableForLegalReasonsException, _super);
     function UnavailableForLegalReasonsException(message, error) {
-        if (error === void 0) { error = exports.ResponseMessage.UNAVAILABLE_FOR_LEGAL_REASONS; }
-        return _super.call(this, HttpException.createBody(message, error, exports.ResponseCode.UNAVAILABLE_FOR_LEGAL_REASONS), exports.ResponseCode.UNAVAILABLE_FOR_LEGAL_REASONS) || this;
+        if (error === void 0) { error = exports.HttpResponseMessage.UNAVAILABLE_FOR_LEGAL_REASONS; }
+        return _super.call(this, HttpException.createBody(message, error, exports.HttpResponseCode.UNAVAILABLE_FOR_LEGAL_REASONS), exports.HttpResponseCode.UNAVAILABLE_FOR_LEGAL_REASONS) || this;
     }
     return UnavailableForLegalReasonsException;
 }(HttpException));
@@ -929,8 +1023,8 @@ var UnavailableForLegalReasonsException = /** @class */ (function (_super) {
 var InternalServerErrorException = /** @class */ (function (_super) {
     __extends(InternalServerErrorException, _super);
     function InternalServerErrorException(message, error) {
-        if (error === void 0) { error = exports.ResponseMessage.INTERNAL_SERVER_ERROR; }
-        return _super.call(this, HttpException.createBody(message, error, exports.ResponseCode.INTERNAL_SERVER_ERROR), exports.ResponseCode.INTERNAL_SERVER_ERROR) || this;
+        if (error === void 0) { error = exports.HttpResponseMessage.INTERNAL_SERVER_ERROR; }
+        return _super.call(this, HttpException.createBody(message, error, exports.HttpResponseCode.INTERNAL_SERVER_ERROR), exports.HttpResponseCode.INTERNAL_SERVER_ERROR) || this;
     }
     return InternalServerErrorException;
 }(HttpException));
@@ -940,8 +1034,8 @@ var InternalServerErrorException = /** @class */ (function (_super) {
 var NotImplementedException = /** @class */ (function (_super) {
     __extends(NotImplementedException, _super);
     function NotImplementedException(message, error) {
-        if (error === void 0) { error = exports.ResponseMessage.NOT_IMPLEMENTED; }
-        return _super.call(this, HttpException.createBody(message, error, exports.ResponseCode.NOT_IMPLEMENTED), exports.ResponseCode.NOT_IMPLEMENTED) || this;
+        if (error === void 0) { error = exports.HttpResponseMessage.NOT_IMPLEMENTED; }
+        return _super.call(this, HttpException.createBody(message, error, exports.HttpResponseCode.NOT_IMPLEMENTED), exports.HttpResponseCode.NOT_IMPLEMENTED) || this;
     }
     return NotImplementedException;
 }(HttpException));
@@ -951,8 +1045,8 @@ var NotImplementedException = /** @class */ (function (_super) {
 var BadGatewayException = /** @class */ (function (_super) {
     __extends(BadGatewayException, _super);
     function BadGatewayException(message, error) {
-        if (error === void 0) { error = exports.ResponseMessage.BAD_GATEWAY; }
-        return _super.call(this, HttpException.createBody(message, error, exports.ResponseCode.BAD_GATEWAY), exports.ResponseCode.BAD_GATEWAY) || this;
+        if (error === void 0) { error = exports.HttpResponseMessage.BAD_GATEWAY; }
+        return _super.call(this, HttpException.createBody(message, error, exports.HttpResponseCode.BAD_GATEWAY), exports.HttpResponseCode.BAD_GATEWAY) || this;
     }
     return BadGatewayException;
 }(HttpException));
@@ -962,8 +1056,8 @@ var BadGatewayException = /** @class */ (function (_super) {
 var ServiceUnavailableException = /** @class */ (function (_super) {
     __extends(ServiceUnavailableException, _super);
     function ServiceUnavailableException(message, error) {
-        if (error === void 0) { error = exports.ResponseMessage.SERVICE_UNAVAILABLE; }
-        return _super.call(this, HttpException.createBody(message, error, exports.ResponseCode.SERVICE_UNAVAILABLE), exports.ResponseCode.SERVICE_UNAVAILABLE) || this;
+        if (error === void 0) { error = exports.HttpResponseMessage.SERVICE_UNAVAILABLE; }
+        return _super.call(this, HttpException.createBody(message, error, exports.HttpResponseCode.SERVICE_UNAVAILABLE), exports.HttpResponseCode.SERVICE_UNAVAILABLE) || this;
     }
     return ServiceUnavailableException;
 }(HttpException));
@@ -973,8 +1067,8 @@ var ServiceUnavailableException = /** @class */ (function (_super) {
 var GatewayTimeoutException = /** @class */ (function (_super) {
     __extends(GatewayTimeoutException, _super);
     function GatewayTimeoutException(message, error) {
-        if (error === void 0) { error = exports.ResponseMessage.GATEWAY_TIMEOUT; }
-        return _super.call(this, HttpException.createBody(message, error, exports.ResponseCode.GATEWAY_TIMEOUT), exports.ResponseCode.GATEWAY_TIMEOUT) || this;
+        if (error === void 0) { error = exports.HttpResponseMessage.GATEWAY_TIMEOUT; }
+        return _super.call(this, HttpException.createBody(message, error, exports.HttpResponseCode.GATEWAY_TIMEOUT), exports.HttpResponseCode.GATEWAY_TIMEOUT) || this;
     }
     return GatewayTimeoutException;
 }(HttpException));
@@ -984,8 +1078,8 @@ var GatewayTimeoutException = /** @class */ (function (_super) {
 var HTTPVersionNotSupportedException = /** @class */ (function (_super) {
     __extends(HTTPVersionNotSupportedException, _super);
     function HTTPVersionNotSupportedException(message, error) {
-        if (error === void 0) { error = exports.ResponseMessage.HTTP_VERSION_NOT_SUPPORTED; }
-        return _super.call(this, HttpException.createBody(message, error, exports.ResponseCode.HTTP_VERSION_NOT_SUPPORTED), exports.ResponseCode.HTTP_VERSION_NOT_SUPPORTED) || this;
+        if (error === void 0) { error = exports.HttpResponseMessage.HTTP_VERSION_NOT_SUPPORTED; }
+        return _super.call(this, HttpException.createBody(message, error, exports.HttpResponseCode.HTTP_VERSION_NOT_SUPPORTED), exports.HttpResponseCode.HTTP_VERSION_NOT_SUPPORTED) || this;
     }
     return HTTPVersionNotSupportedException;
 }(HttpException));
@@ -995,8 +1089,8 @@ var HTTPVersionNotSupportedException = /** @class */ (function (_super) {
 var VariantAlsoNegotiatesException = /** @class */ (function (_super) {
     __extends(VariantAlsoNegotiatesException, _super);
     function VariantAlsoNegotiatesException(message, error) {
-        if (error === void 0) { error = exports.ResponseMessage.VARIANT_ALSO_NEGOTIATES; }
-        return _super.call(this, HttpException.createBody(message, error, exports.ResponseCode.VARIANT_ALSO_NEGOTIATES), exports.ResponseCode.VARIANT_ALSO_NEGOTIATES) || this;
+        if (error === void 0) { error = exports.HttpResponseMessage.VARIANT_ALSO_NEGOTIATES; }
+        return _super.call(this, HttpException.createBody(message, error, exports.HttpResponseCode.VARIANT_ALSO_NEGOTIATES), exports.HttpResponseCode.VARIANT_ALSO_NEGOTIATES) || this;
     }
     return VariantAlsoNegotiatesException;
 }(HttpException));
@@ -1006,8 +1100,8 @@ var VariantAlsoNegotiatesException = /** @class */ (function (_super) {
 var InsufficientStorageException = /** @class */ (function (_super) {
     __extends(InsufficientStorageException, _super);
     function InsufficientStorageException(message, error) {
-        if (error === void 0) { error = exports.ResponseMessage.INSUFFICIENT_STORAGE; }
-        return _super.call(this, HttpException.createBody(message, error, exports.ResponseCode.INSUFFICIENT_STORAGE), exports.ResponseCode.INSUFFICIENT_STORAGE) || this;
+        if (error === void 0) { error = exports.HttpResponseMessage.INSUFFICIENT_STORAGE; }
+        return _super.call(this, HttpException.createBody(message, error, exports.HttpResponseCode.INSUFFICIENT_STORAGE), exports.HttpResponseCode.INSUFFICIENT_STORAGE) || this;
     }
     return InsufficientStorageException;
 }(HttpException));
@@ -1017,8 +1111,8 @@ var InsufficientStorageException = /** @class */ (function (_super) {
 var LoopDetectedException = /** @class */ (function (_super) {
     __extends(LoopDetectedException, _super);
     function LoopDetectedException(message, error) {
-        if (error === void 0) { error = exports.ResponseMessage.LOOP_DETECTED; }
-        return _super.call(this, HttpException.createBody(message, error, exports.ResponseCode.LOOP_DETECTED), exports.ResponseCode.LOOP_DETECTED) || this;
+        if (error === void 0) { error = exports.HttpResponseMessage.LOOP_DETECTED; }
+        return _super.call(this, HttpException.createBody(message, error, exports.HttpResponseCode.LOOP_DETECTED), exports.HttpResponseCode.LOOP_DETECTED) || this;
     }
     return LoopDetectedException;
 }(HttpException));
@@ -1028,85 +1122,11 @@ var LoopDetectedException = /** @class */ (function (_super) {
 var NetworkAuthenticationRequiredException = /** @class */ (function (_super) {
     __extends(NetworkAuthenticationRequiredException, _super);
     function NetworkAuthenticationRequiredException(message, error) {
-        if (error === void 0) { error = exports.ResponseMessage.NETWORK_AUTHENTICATION_REQUIRED; }
-        return _super.call(this, HttpException.createBody(message, error, exports.ResponseCode.NETWORK_AUTHENTICATION_REQUIRED), exports.ResponseCode.NETWORK_AUTHENTICATION_REQUIRED) || this;
+        if (error === void 0) { error = exports.HttpResponseMessage.NETWORK_AUTHENTICATION_REQUIRED; }
+        return _super.call(this, HttpException.createBody(message, error, exports.HttpResponseCode.NETWORK_AUTHENTICATION_REQUIRED), exports.HttpResponseCode.NETWORK_AUTHENTICATION_REQUIRED) || this;
     }
     return NetworkAuthenticationRequiredException;
 }(HttpException));
-
-var RequestV1 = /** @class */ (function (_super) {
-    __extends(RequestV1, _super);
-    /**
-     * Constructor
-     * @param socket
-     * @param routeParams
-     */
-    function RequestV1(socket, routeParams) {
-        var _this = _super.call(this, socket) || this;
-        _this.cookieParams = _this.parseCookieParams();
-        _this.routeParams = routeParams;
-        _this.queryParams = _this.parseQueryParams();
-        return _this;
-    }
-    /**
-     * Parse Cookie string
-     * @param cookies
-     */
-    RequestV1.prototype.parseCookieParams = function (cookies) {
-        var cookiesString = cookies ? cookies : (this.headers || {}).cookie || '';
-        return SetCookieParser.parse(cookiesString.split('; '), {
-            decodeValues: true,
-            map: true,
-        });
-    };
-    /**
-     * Parse url string
-     * @param url
-     */
-    RequestV1.prototype.parseQueryParams = function (url$1) {
-        var urlString = url$1 ? url$1 : this.url || '';
-        return url.parse(urlString, true).query;
-    };
-    return RequestV1;
-}(http.IncomingMessage));
-var RequestV2 = /** @class */ (function (_super) {
-    __extends(RequestV2, _super);
-    /**
-     * Constructor
-     * @param stream
-     * @param headers
-     * @param options
-     * @param rawHeaders
-     * @param routeParams
-     */
-    function RequestV2(stream, headers, options, rawHeaders, routeParams) {
-        var _this = _super.call(this, stream, headers, options, rawHeaders) || this;
-        _this.cookieParams = _this.parseCookieParams();
-        _this.routeParams = routeParams;
-        _this.queryParams = _this.parseQueryParams();
-        return _this;
-    }
-    /**
-     * Parse Cookie string
-     * @param cookies
-     */
-    RequestV2.prototype.parseCookieParams = function (cookies) {
-        var cookiesString = cookies ? cookies : (this.headers || {}).cookie || '';
-        return SetCookieParser.parse(cookiesString.split('; '), {
-            decodeValues: true,
-            map: true,
-        });
-    };
-    /**
-     * Parse url string
-     * @param url
-     */
-    RequestV2.prototype.parseQueryParams = function (url$1) {
-        var urlString = url$1 ? url$1 : this.url || '';
-        return url.parse(urlString, true).query;
-    };
-    return RequestV2;
-}(http2.Http2ServerRequest));
 
 var MockRequest = /** @class */ (function (_super) {
     __extends(MockRequest, _super);
@@ -1124,15 +1144,26 @@ var MockRequest = /** @class */ (function (_super) {
         return _this;
     }
     return MockRequest;
-}(RequestV1));
+}(HttpRequest));
+var MockResponse = /** @class */ (function (_super) {
+    __extends(MockResponse, _super);
+    function MockResponse(req, mock) {
+        var _this = _super.call(this, req) || this;
+        _this.statusCode = mock ? mock.statusCode : exports.HttpResponseCode.OK;
+        _this.statusMessage = mock ? mock.statusMessage : exports.HttpResponseMessage.OK;
+        return _this;
+        //    this.writableFinished = mock ? mock.writableFinished : true
+    }
+    return MockResponse;
+}(HttpResponse));
 var mockReq = function (data, params) {
     var _a;
     return new MockRequest({
         complete: true,
         connection: new net.Socket(),
         headers: (_a = {},
-            _a[exports.RequestHeader.COOKIE.toLowerCase()] = 'test=testValue; test2=testValue2',
-            _a[exports.RequestHeader.X_FORWARDED_FOR.toLowerCase()] = '8.8.8.8',
+            _a[exports.HttpRequestHeader.COOKIE.toLowerCase()] = 'test=testValue; test2=testValue2',
+            _a[exports.HttpRequestHeader.X_FORWARDED_FOR.toLowerCase()] = '8.8.8.8',
             _a.test = 'testValue',
             _a.test2 = 'testValue2',
             _a),
@@ -1149,8 +1180,8 @@ var mockReqYaml = function (data, params) {
         complete: true,
         connection: new net.Socket(),
         headers: (_a = {},
-            _a[exports.RequestHeader.COOKIE.toLowerCase()] = 'test=testValue; test2=testValue2',
-            _a[exports.RequestHeader.X_FORWARDED_FOR.toLowerCase()] = '8.8.8.8',
+            _a[exports.HttpRequestHeader.COOKIE.toLowerCase()] = 'test=testValue; test2=testValue2',
+            _a[exports.HttpRequestHeader.X_FORWARDED_FOR.toLowerCase()] = '8.8.8.8',
             _a.test = 'testValue',
             _a.test2 = 'testValue2',
             _a),
@@ -1161,18 +1192,6 @@ var mockReqYaml = function (data, params) {
         url: '/test?test=testValue&test2=testValue2',
     }, YAML.stringify(data), params);
 };
-
-var MockResponse = /** @class */ (function (_super) {
-    __extends(MockResponse, _super);
-    function MockResponse(req, mock) {
-        var _this = _super.call(this, req) || this;
-        _this.statusCode = mock ? mock.statusCode : exports.ResponseCode.OK;
-        _this.statusMessage = mock ? mock.statusMessage : exports.ResponseMessage.OK;
-        return _this;
-        //    this.writableFinished = mock ? mock.writableFinished : true
-    }
-    return MockResponse;
-}(http.ServerResponse));
 var mockRes = function (data) { return new MockResponse(mockReq(data)); };
 
 exports.BadGatewayException = BadGatewayException;
@@ -1185,7 +1204,11 @@ exports.GatewayTimeoutException = GatewayTimeoutException;
 exports.GoneException = GoneException;
 exports.HTTPVersionNotSupportedException = HTTPVersionNotSupportedException;
 exports.Header = Header;
+exports.Http2Request = Http2Request;
+exports.Http2Response = Http2Response;
 exports.HttpException = HttpException;
+exports.HttpRequest = HttpRequest;
+exports.HttpResponse = HttpResponse;
 exports.ImateapotException = ImateapotException;
 exports.InsufficientStorageException = InsufficientStorageException;
 exports.InternalServerErrorException = InternalServerErrorException;
@@ -1210,8 +1233,6 @@ exports.RangeNotSatisfiableException = RangeNotSatisfiableException;
 exports.Req = Req;
 exports.RequestHeaderFieldsTooLargeException = RequestHeaderFieldsTooLargeException;
 exports.RequestTimeoutException = RequestTimeoutException;
-exports.RequestV1 = RequestV1;
-exports.RequestV2 = RequestV2;
 exports.Res = Res;
 exports.RespondWith = RespondWith;
 exports.RespondWithJson = RespondWithJson;

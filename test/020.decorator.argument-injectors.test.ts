@@ -3,7 +3,7 @@ import {expect} from 'chai'
 import YAML from 'yaml'
 
 import {
-  ArgumentSource,
+  HttpArgumentSource,
   Body,
   Cookie,
   Header,
@@ -16,7 +16,7 @@ import {
   mockRes,
   Req,
   Res,
-  ResponseCode,
+  HttpResponseCode,
 } from '../src'
 
 class TestController {
@@ -75,7 +75,7 @@ describe('lib/controller/decorator/argument-injector => *', () => {
       const metadata = gmd('hasBodyAsArgument', controller)
       expect(metadata.length).to.equal(1)
       expect(metadata[0].source).to.be.a('string')
-      expect(metadata[0].source).to.equal(ArgumentSource.REQUEST)
+      expect(metadata[0].source).to.equal(HttpArgumentSource.REQUEST)
     })
 
     it('@Body() =>  Should add a @Body argument containing the entire `body` object', done => {
@@ -143,7 +143,7 @@ describe('lib/controller/decorator/argument-injector => *', () => {
       const metadata = gmd('hasCookieAsArgument', controller)
       expect(metadata.length).to.equal(1)
       expect(metadata[0].source).to.be.a('string')
-      expect(metadata[0].source).to.equal(ArgumentSource.REQUEST)
+      expect(metadata[0].source).to.equal(HttpArgumentSource.REQUEST)
     })
 
     it('@Cookie() => Should add a @Cookie argument containing the entire `cookies` object', () => {
@@ -178,7 +178,7 @@ describe('lib/controller/decorator/argument-injector => *', () => {
       const metadata = gmd('hasHeaderAsArgument', controller)
       expect(metadata.length).to.equal(1)
       expect(metadata[0].source).to.be.a('string')
-      expect(metadata[0].source).to.equal(ArgumentSource.REQUEST)
+      expect(metadata[0].source).to.equal(HttpArgumentSource.REQUEST)
     })
 
     it('@Header() => Should add a @Header argument containing the entire `headers` object', () => {
@@ -212,7 +212,7 @@ describe('lib/controller/decorator/argument-injector => *', () => {
       const metadata = gmd('hasIpAsArgument', controller)
       expect(metadata.length).to.equal(1)
       expect(metadata[0].source).to.be.a('string')
-      expect(metadata[0].source).to.equal(ArgumentSource.REQUEST)
+      expect(metadata[0].source).to.equal(HttpArgumentSource.REQUEST)
     })
 
     it('@Ip() => Should add a @Ip argument containing the request source ip', () => {
@@ -236,7 +236,7 @@ describe('lib/controller/decorator/argument-injector => *', () => {
       const metadata = gmd('hasParamAsArgument', controller)
       expect(metadata.length).to.equal(1)
       expect(metadata[0].source).to.be.a('string')
-      expect(metadata[0].source).to.equal(ArgumentSource.REQUEST)
+      expect(metadata[0].source).to.equal(HttpArgumentSource.REQUEST)
     })
 
     it('@Param() => Should add a @Param argument containing the entire `params` object', () => {
@@ -283,7 +283,7 @@ describe('lib/controller/decorator/argument-injector => *', () => {
       const metadata = gmd('hasQueryAsArgument', controller)
       expect(metadata.length).to.equal(1)
       expect(metadata[0].source).to.be.a('string')
-      expect(metadata[0].source).to.equal(ArgumentSource.REQUEST)
+      expect(metadata[0].source).to.equal(HttpArgumentSource.REQUEST)
     })
 
     it('@Query() => Should add a @Body argument containing the entire `query` object', () => {
@@ -318,7 +318,7 @@ describe('lib/controller/decorator/argument-injector => *', () => {
       const metadata = gmd('hasReqAsArgument', controller)
       expect(metadata.length).to.equal(1)
       expect(metadata[0].source).to.be.a('string')
-      expect(metadata[0].source).to.equal(ArgumentSource.REQUEST)
+      expect(metadata[0].source).to.equal(HttpArgumentSource.REQUEST)
 
       const data = metadata[0].callable(mockReq(bodyObject))
       expect(data).to.be.a('object')
@@ -339,11 +339,11 @@ describe('lib/controller/decorator/argument-injector => *', () => {
       const metadata = gmd('hasResAsArgument', controller)
       expect(metadata.length).to.equal(1)
       expect(metadata[0].source).to.be.a('string')
-      expect(metadata[0].source).to.equal(ArgumentSource.RESPONSE)
+      expect(metadata[0].source).to.equal(HttpArgumentSource.RESPONSE)
 
       const data = metadata[0].callable(mockRes(bodyObject))
       expect(data).to.be.a('object')
-      expect(data.statusCode).to.equal(ResponseCode.OK)
+      expect(data.statusCode).to.equal(HttpResponseCode.OK)
     })
   })
 })

@@ -1,23 +1,31 @@
 import 'reflect-metadata'
 
-import {RequestBodyDecoder, RequestHeader, Response} from '../_types'
+import {Http2Request, HttpRequest, HttpRequestBodyDecoder, HttpRequestHeader} from '../request'
+import {Http2Response, HttpResponse} from '../response'
 
-import {Request} from '../request'
-
-export enum ArgumentSource {
+/**
+ * Sources for Http Arguments
+ */
+export enum HttpArgumentSource {
   REQUEST = 'request',
   RESPONSE = 'response',
 }
 
-export type ArgumentMapperCallable = (entity: any) => any
+/**
+ * Method definition for extracting argument from Http?Request / Http?Response
+ */
+export type HttpArgumentExtractor = (entity: any) => any
 
-export interface BodyArgumentMapperCallable extends ArgumentMapperCallable {
+/**
+ * Method definition for extracting argument from Http Body (see POST requests)
+ */
+export interface HttpBodyArgumentExtractor extends HttpArgumentExtractor {
   (req: Request): Promise<any>
 }
 
 export interface ParameterDescriptor {
-  callable: ArgumentMapperCallable
-  source: ArgumentSource
+  callable: HttpArgumentExtractor
+  source: HttpArgumentSource
 }
 
 /******************************************************************************
@@ -32,7 +40,7 @@ export interface ParameterDescriptor {
  * If key is not mentioned or `null`, will return the entire decoded body.
  * If key is mentioned and not null, will return a certain property of the body, defined by the key's value.
  */
-export const Body = (key?: string, decoder: RequestBodyDecoder = JSON.parse): ParameterDecorator => {
+export const Body = (key?: string, decoder: HttpRequestBodyDecoder = JSON.parse): ParameterDecorator => {
   return (target: any, methodKey: string | symbol, parameterIndex: number) => {
     const mapper = (data: any) => (key ? data[key] : data)
 
@@ -40,7 +48,7 @@ export const Body = (key?: string, decoder: RequestBodyDecoder = JSON.parse): Pa
       target,
       methodKey,
       parameterIndex,
-      (req: Request): Promise<any> =>
+      (req: HttpRequest | Http2Request): Promise<any> =>
         readRequestBody(req)
           .then(decoder)
           .then(mapper),
@@ -56,7 +64,7 @@ export const Body = (key?: string, decoder: RequestBodyDecoder = JSON.parse): Pa
  */
 export const Cookie = (key?: string, value?: any): ParameterDecorator => {
   return (target: any, methodKey: string | symbol, parameterIndex: number) => {
-    appendParameterMapper(target, methodKey, parameterIndex, (req: Request) => {
+    appendParameterMapper(target, methodKey, parameterIndex, (req: HttpRequest | Http2Request) => {
       if (!req.cookieParams) {
         return null
       }
@@ -73,7 +81,7 @@ export const Cookie = (key?: string, value?: any): ParameterDecorator => {
  */
 export const Header = (key?: string): ParameterDecorator => {
   return (target: any, methodKey: string | symbol, parameterIndex: number) => {
-    appendParameterMapper(target, methodKey, parameterIndex, (req: Request) => {
+    appendParameterMapper(target, methodKey, parameterIndex, (req: HttpRequest | Http2Request) => {
       return key ? req.headers[key] : req.headers
     })
   }
@@ -88,7 +96,7 @@ export const Ip = (): ParameterDecorator => {
       target,
       methodKey,
       parameterIndex,
-      (req: Request): any => req.headers[RequestHeader.X_FORWARDED_FOR.toLowerCase()],
+      (req: HttpRequest | Http2Request): any => req.headers[HttpRequestHeader.X_FORWARDED_FOR.toLowerCase()],
     )
   }
 }
@@ -101,7 +109,7 @@ export const Ip = (): ParameterDecorator => {
  */
 export const Param = (key?: string): ParameterDecorator => {
   return (target: any, methodKey: string | symbol, parameterIndex: number) => {
-    appendParameterMapper(target, methodKey, parameterIndex, (req: Request): any =>
+    appendParameterMapper(target, methodKey, parameterIndex, (req: HttpRequest | Http2Request): any =>
       key ? (req.routeParams as any)[key] : req.routeParams,
     )
   }
@@ -114,7 +122,7 @@ export const Param = (key?: string): ParameterDecorator => {
  */
 export const Query = (key?: string): ParameterDecorator => {
   return (target: any, methodKey: string | symbol, parameterIndex: number) => {
-    appendParameterMapper(target, methodKey, parameterIndex, (req: Request): any =>
+    appendParameterMapper(target, methodKey, parameterIndex, (req: HttpRequest | Http2Request): any =>
       key ? (req.queryParams as any)[key] : req.queryParams,
     )
   }
@@ -125,7 +133,12 @@ export const Query = (key?: string): ParameterDecorator => {
  */
 export const Req = (): ParameterDecorator => {
   return (target: any, methodKey: string | symbol, parameterIndex: number) => {
-    appendParameterMapper(target, methodKey, parameterIndex, (req: Request): Request => req)
+    appendParameterMapper(
+      target,
+      methodKey,
+      parameterIndex,
+      (req: HttpRequest | Http2Request): HttpRequest | Http2Request => req,
+    )
   }
 }
 
@@ -134,13 +147,15 @@ export const Req = (): ParameterDecorator => {
  */
 export const Res = (): ParameterDecorator => {
   return (target: any, methodKey: string | symbol, parameterIndex: number) => {
-    appendParameterMapper(target, methodKey, parameterIndex, (res: Response): Response => res, ArgumentSource.RESPONSE)
+    appendParameterMapper(
+      target,
+      methodKey,
+      parameterIndex,
+      (res: HttpResponse | Http2Response): HttpResponse | Http2Response => res,
+      HttpArgumentSource.RESPONSE,
+    )
   }
 }
-
-// /**
-//  * @Redirect(url: string, code: number = 301)
-//  */
 
 /******************************************************************************
  *
@@ -160,7 +175,7 @@ export const methodArgumentsDescriptor = (methodName: string | symbol): string =
  * @link https://nodejs.org/es/docs/guides/anatomy-of-an-http-transaction/
  * @param req
  */
-const readRequestBody = async (req: Request): Promise<string> =>
+const readRequestBody = async (req: HttpRequest | Http2Request): Promise<string> =>
   new Promise((resolve, reject) => {
     const body: Uint8Array[] = []
     req
@@ -184,8 +199,8 @@ const appendParameterMapper = (
   target: any,
   methodName: string | symbol,
   parameterIndex: number,
-  callable: ArgumentMapperCallable,
-  source: ArgumentSource = ArgumentSource.REQUEST,
+  callable: HttpArgumentExtractor,
+  source: HttpArgumentSource = HttpArgumentSource.REQUEST,
 ): void => {
   // calculate method (name) descriptor
   const methodDescriptor: string = methodArgumentsDescriptor(methodName)

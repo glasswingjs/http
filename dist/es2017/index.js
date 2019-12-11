@@ -1,316 +1,251 @@
 import 'reflect-metadata';
+import { IncomingMessage, ServerResponse } from 'http';
+import SetCookieParser from 'set-cookie-parser';
+import { parse } from 'url';
+import { Http2ServerRequest, Http2ServerResponse } from 'http2';
 import { extendClassMethod } from '@glasswing/common';
 import YAML from 'yaml';
 import { Socket } from 'net';
-import { IncomingMessage, ServerResponse } from 'http';
-import { Http2ServerRequest } from 'http2';
-import SetCookieParser from 'set-cookie-parser';
-import { parse } from 'url';
 
-/**
- * HTTP Version
- */
-var Version;
-(function (Version) {
-    Version["V1"] = "http1";
-    Version["V2"] = "http2";
-})(Version || (Version = {}));
+class HttpRequest extends IncomingMessage {
+    /**
+     * Constructor
+     * @param socket
+     * @param routeParams
+     */
+    constructor(socket, routeParams) {
+        super(socket);
+        this.cookieParams = this.parseCookieParams();
+        this.routeParams = routeParams;
+        this.queryParams = this.parseQueryParams();
+    }
+    /**
+     * Parse Cookie string
+     * @param cookies
+     */
+    parseCookieParams(cookies) {
+        const cookiesString = cookies ? cookies : (this.headers || {}).cookie || '';
+        return SetCookieParser.parse(cookiesString.split('; '), {
+            decodeValues: true,
+            map: true,
+        });
+    }
+    /**
+     * Parse url string
+     * @param url
+     */
+    parseQueryParams(url) {
+        const urlString = url ? url : this.url || '';
+        return parse(urlString, true).query;
+    }
+    /**
+     *
+     */
+    toHttpRequest() {
+        return this;
+    }
+}
+
+class Http2Request extends Http2ServerRequest {
+    /**
+     * Constructor
+     * @param stream
+     * @param headers
+     * @param options
+     * @param rawHeaders
+     * @param routeParams
+     */
+    constructor(stream, headers, options, rawHeaders, routeParams) {
+        super(stream, headers, options, rawHeaders);
+        this.cookieParams = this.parseCookieParams();
+        this.routeParams = routeParams;
+        this.queryParams = this.parseQueryParams();
+    }
+    /**
+     * Parse Cookie string
+     * @param cookies
+     */
+    parseCookieParams(cookies) {
+        const cookiesString = cookies ? cookies : (this.headers || {}).cookie || '';
+        return SetCookieParser.parse(cookiesString.split('; '), {
+            decodeValues: true,
+            map: true,
+        });
+    }
+    /**
+     * Parse url string
+     * @param url
+     */
+    parseQueryParams(url) {
+        const urlString = url ? url : this.url || '';
+        return parse(urlString, true).query;
+    }
+    /**
+     *
+     */
+    toHttpRequest() {
+        return this;
+    }
+}
+
 /**
  * List of HTTP headers, as described on MDN Documentation
  * @link https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers
  */
-var RequestHeader;
-(function (RequestHeader) {
-    RequestHeader["ACCEPT"] = "Accept";
-    RequestHeader["ACCEPT_CH"] = "Accept-CH";
-    RequestHeader["ACCEPT_CH_LIFETIME"] = "Accept-CH-Lifetime";
-    RequestHeader["ACCEPT_CHARSET"] = "Accept-Charset";
-    RequestHeader["ACCEPT_ENCODING"] = "Accept-Encoding";
-    RequestHeader["ACCEPT_LANGUAGE"] = "Accept-Language";
-    RequestHeader["ACCEPT_PATCH"] = "Accept-Patch";
-    RequestHeader["ACCEPT_RANGES"] = "Accept-Ranges";
-    RequestHeader["ACCESS_CONTROL_ALLOW_CREDENTIALS"] = "Access-Control-Allow-Credentials";
-    RequestHeader["ACCESS_CONTROL_ALLOW_HEADERS"] = "Access-Control-Allow-Headers";
-    RequestHeader["ACCESS_CONTROL_ALLOW_METHODS"] = "Access-Control-Allow-Methods";
-    RequestHeader["ACCESS_CONTROL_ALLOW_ORIGIN"] = "Access-Control-Allow-Origin";
-    RequestHeader["ACCESS_CONTROL_EXPOSE_HEADERS"] = "Access-Control-Expose-Headers";
-    RequestHeader["ACCESS_CONTROL_MAX_AGE"] = "Access-Control-Max-Age";
-    RequestHeader["ACCESS_CONTROL_REQUEST_HEADERS"] = "Access-Control-Request-Headers";
-    RequestHeader["ACCESS_CONTROL_REQUEST_METHOD"] = "Access-Control-Request-Method";
-    RequestHeader["AGE"] = "Age";
-    RequestHeader["ALLOW"] = "Allow";
-    RequestHeader["ALT_SVC"] = "Alt-Svc";
-    RequestHeader["AUTHORIZATION"] = "Authorization";
-    RequestHeader["CACHE_CONTROL"] = "Cache-Control";
-    RequestHeader["CLEAR_SITE_DATA"] = "Clear-Site-Data";
-    RequestHeader["CONNECTION"] = "Connection";
-    RequestHeader["CONTENT_DISPOSITION"] = "Content-Disposition";
-    RequestHeader["CONTENT_ENCODING"] = "Content-Encoding";
-    RequestHeader["CONTENT_LANGUAGE"] = "Content-Language";
-    RequestHeader["CONTENT_LENGTH"] = "Content-Length";
-    RequestHeader["CONTENT_LOCATION"] = "Content-Location";
-    RequestHeader["CONTENT_RANGE"] = "Content-Range";
-    RequestHeader["CONTENT_SECURITY_POLICY"] = "Content-Security-Policy";
-    RequestHeader["CONTENT_SECURITY_POLICY_REPORT_ONLY"] = "Content-Security-Policy-Report-Only";
-    RequestHeader["CONTENT_TYPE"] = "Content-Type";
-    RequestHeader["COOKIE"] = "Cookie";
-    RequestHeader["COOKIE2"] = "Cookie2";
-    RequestHeader["CROSS_ORIGIN_RESOURCE_POLICY"] = "Cross-Origin-Resource-Policy";
-    RequestHeader["DNT"] = "DNT";
-    RequestHeader["DPR"] = "DPR";
-    RequestHeader["DATE"] = "Date";
-    RequestHeader["DEVICE_MEMORY"] = "Device-Memory";
-    RequestHeader["DIGEST"] = "Digest";
-    RequestHeader["ETAG"] = "ETag";
-    RequestHeader["EARLY_DATA"] = "Early-Data";
-    RequestHeader["EXPECT"] = "Expect";
-    RequestHeader["EXPECT_CT"] = "Expect-CT";
-    RequestHeader["EXPIRES"] = "Expires";
-    RequestHeader["FEATURE_POLICY"] = "Feature-Policy";
-    RequestHeader["FORWARDED"] = "Forwarded";
-    RequestHeader["FROM"] = "From";
-    RequestHeader["HOST"] = "Host";
-    RequestHeader["IF_MATCH"] = "If-Match";
-    RequestHeader["IF_MODIFIED_SINCE"] = "If-Modified-Since";
-    RequestHeader["IF_NONE_MATCH"] = "If-None-Match";
-    RequestHeader["IF_RANGE"] = "If-Range";
-    RequestHeader["IF_UNMODIFIED_SINCE"] = "If-Unmodified-Since";
-    RequestHeader["INDEX"] = "Index";
-    RequestHeader["KEEP_ALIVE"] = "Keep-Alive";
-    RequestHeader["LARGE_ALLOCATION"] = "Large-Allocation";
-    RequestHeader["LAST_MODIFIED"] = "Last-Modified";
-    RequestHeader["LINK"] = "Link";
-    RequestHeader["LOCATION"] = "Location";
-    RequestHeader["ORIGIN"] = "Origin";
-    RequestHeader["PRAGMA"] = "Pragma";
-    RequestHeader["PROXY_AUTHENTICATE"] = "Proxy-Authenticate";
-    RequestHeader["PROXY_AUTHORIZATION"] = "Proxy-Authorization";
-    RequestHeader["PUBLIC_KEY_PINS"] = "Public-Key-Pins";
-    RequestHeader["PUBLIC_KEY_PINS_REPORT_ONLY"] = "Public-Key-Pins-Report-Only";
-    RequestHeader["RANGE"] = "Range";
-    RequestHeader["REFERER"] = "Referer";
-    RequestHeader["REFERRER_POLICY"] = "Referrer-Policy";
-    RequestHeader["RETRY_AFTER"] = "Retry-After";
-    RequestHeader["SAVE_DATA"] = "Save-Data";
-    RequestHeader["SEC_WEBSOCKET_ACCEPT"] = "Sec-WebSocket-Accept";
-    RequestHeader["SERVER"] = "Server";
-    RequestHeader["SERVER_TIMING"] = "Server-Timing";
-    RequestHeader["SET_COOKIE"] = "Set-Cookie";
-    RequestHeader["SET_COOKIE2"] = "Set-Cookie2";
-    RequestHeader["SOURCEMAP"] = "SourceMap";
-    RequestHeader["STRICT_TRANSPORT_SECURITY"] = "Strict-Transport-Security";
-    RequestHeader["TE"] = "TE";
-    RequestHeader["TIMING_ALLOW_ORIGIN"] = "Timing-Allow-Origin";
-    RequestHeader["TK"] = "Tk";
-    RequestHeader["TRAILER"] = "Trailer";
-    RequestHeader["TRANSFER_ENCODING"] = "Transfer-Encoding";
-    RequestHeader["UPGRADE_INSECURE_REQUESTS"] = "Upgrade-Insecure-Requests";
-    RequestHeader["USER_AGENT"] = "User-Agent";
-    RequestHeader["VARY"] = "Vary";
-    RequestHeader["VIA"] = "Via";
-    RequestHeader["WWW_AUTHENTICATE"] = "WWW-Authenticate";
-    RequestHeader["WANT_DIGEST"] = "Want-Digest";
-    RequestHeader["WARNING"] = "Warning";
-    RequestHeader["X_CONTENT_TYPE_OPTIONS"] = "X-Content-Type-Options";
-    RequestHeader["X_DNS_PREFETCH_CONTROL"] = "X-DNS-Prefetch-Control";
-    RequestHeader["X_FORWARDED_FOR"] = "X-Forwarded-For";
-    RequestHeader["X_FORWARDED_HOST"] = "X-Forwarded-Host";
-    RequestHeader["X_FORWARDED_PROTO"] = "X-Forwarded-Proto";
-    RequestHeader["X_FRAME_OPTIONS"] = "X-Frame-Options";
-    RequestHeader["X_XSS_PROTECTION"] = "X-XSS-Protection";
-})(RequestHeader || (RequestHeader = {}));
-/**
- * List of HTTP Resonse Codes as described on MDN Documentation
- * @link https://developer.mozilla.org/en-US/docs/Web/HTTP/Status
- * @link https://github.com/symfony/http-foundation/blob/master/Response.php
- */
-var ResponseCode;
-(function (ResponseCode) {
-    ResponseCode[ResponseCode["CONTINUE"] = 100] = "CONTINUE";
-    ResponseCode[ResponseCode["SWITCHING_PROTOCOLS"] = 101] = "SWITCHING_PROTOCOLS";
-    ResponseCode[ResponseCode["PROCESSING"] = 102] = "PROCESSING";
-    ResponseCode[ResponseCode["EARLY_HINTS"] = 103] = "EARLY_HINTS";
-    ResponseCode[ResponseCode["OK"] = 200] = "OK";
-    ResponseCode[ResponseCode["CREATED"] = 201] = "CREATED";
-    ResponseCode[ResponseCode["ACCEPTED"] = 202] = "ACCEPTED";
-    ResponseCode[ResponseCode["NON_AUTHORITATIVE_INFORMATION"] = 203] = "NON_AUTHORITATIVE_INFORMATION";
-    ResponseCode[ResponseCode["NO_CONTENT"] = 204] = "NO_CONTENT";
-    ResponseCode[ResponseCode["RESET_CONTENT"] = 205] = "RESET_CONTENT";
-    ResponseCode[ResponseCode["PARTIAL_CONTENT"] = 206] = "PARTIAL_CONTENT";
-    ResponseCode[ResponseCode["MULTI_STATUS"] = 207] = "MULTI_STATUS";
-    ResponseCode[ResponseCode["ALREADY_REPORTED"] = 208] = "ALREADY_REPORTED";
-    ResponseCode[ResponseCode["IM_USED"] = 226] = "IM_USED";
-    ResponseCode[ResponseCode["MULTIPLE_CHOICES"] = 300] = "MULTIPLE_CHOICES";
-    ResponseCode[ResponseCode["MOVED_PERMANENTLY"] = 301] = "MOVED_PERMANENTLY";
-    ResponseCode[ResponseCode["FOUND"] = 302] = "FOUND";
-    ResponseCode[ResponseCode["SEE_OTHER"] = 303] = "SEE_OTHER";
-    ResponseCode[ResponseCode["NOT_MODIFIED"] = 304] = "NOT_MODIFIED";
-    ResponseCode[ResponseCode["USE_PROXY"] = 305] = "USE_PROXY";
-    ResponseCode[ResponseCode["RESERVED"] = 306] = "RESERVED";
-    ResponseCode[ResponseCode["TEMPORARY_REDIRECT"] = 307] = "TEMPORARY_REDIRECT";
-    ResponseCode[ResponseCode["PERMANENTLY_REDIRECT"] = 308] = "PERMANENTLY_REDIRECT";
-    ResponseCode[ResponseCode["BAD_REQUEST"] = 400] = "BAD_REQUEST";
-    ResponseCode[ResponseCode["UNAUTHORIZED"] = 401] = "UNAUTHORIZED";
-    ResponseCode[ResponseCode["PAYMENT_REQUIRED"] = 402] = "PAYMENT_REQUIRED";
-    ResponseCode[ResponseCode["FORBIDDEN"] = 403] = "FORBIDDEN";
-    ResponseCode[ResponseCode["NOT_FOUND"] = 404] = "NOT_FOUND";
-    ResponseCode[ResponseCode["METHOD_NOT_ALLOWED"] = 405] = "METHOD_NOT_ALLOWED";
-    ResponseCode[ResponseCode["NOT_ACCEPTABLE"] = 406] = "NOT_ACCEPTABLE";
-    ResponseCode[ResponseCode["PROXY_AUTHENTICATION_REQUIRED"] = 407] = "PROXY_AUTHENTICATION_REQUIRED";
-    ResponseCode[ResponseCode["REQUEST_TIMEOUT"] = 408] = "REQUEST_TIMEOUT";
-    ResponseCode[ResponseCode["CONFLICT"] = 409] = "CONFLICT";
-    ResponseCode[ResponseCode["GONE"] = 410] = "GONE";
-    ResponseCode[ResponseCode["LENGTH_REQUIRED"] = 411] = "LENGTH_REQUIRED";
-    ResponseCode[ResponseCode["PRECONDITION_FAILED"] = 412] = "PRECONDITION_FAILED";
-    ResponseCode[ResponseCode["PAYLOAD_TOO_LARGE"] = 413] = "PAYLOAD_TOO_LARGE";
-    ResponseCode[ResponseCode["URI_TOO_LONG"] = 414] = "URI_TOO_LONG";
-    ResponseCode[ResponseCode["UNSUPPORTED_MEDIA_TYPE"] = 415] = "UNSUPPORTED_MEDIA_TYPE";
-    ResponseCode[ResponseCode["RANGE_NOT_SATISFIABLE"] = 416] = "RANGE_NOT_SATISFIABLE";
-    ResponseCode[ResponseCode["EXPECTATION_FAILED"] = 417] = "EXPECTATION_FAILED";
-    ResponseCode[ResponseCode["I_AM_A_TEAPOT"] = 418] = "I_AM_A_TEAPOT";
-    ResponseCode[ResponseCode["MISDIRECTED_REQUEST"] = 421] = "MISDIRECTED_REQUEST";
-    ResponseCode[ResponseCode["UNPROCESSABLE_ENTITY"] = 422] = "UNPROCESSABLE_ENTITY";
-    ResponseCode[ResponseCode["LOCKED"] = 423] = "LOCKED";
-    ResponseCode[ResponseCode["FAILED_DEPENDENCY"] = 424] = "FAILED_DEPENDENCY";
-    ResponseCode[ResponseCode["TOO_EARLY"] = 425] = "TOO_EARLY";
-    ResponseCode[ResponseCode["UPGRADE_REQUIRED"] = 426] = "UPGRADE_REQUIRED";
-    ResponseCode[ResponseCode["PRECONDITION_REQUIRED"] = 428] = "PRECONDITION_REQUIRED";
-    ResponseCode[ResponseCode["TOO_MANY_REQUESTS"] = 429] = "TOO_MANY_REQUESTS";
-    ResponseCode[ResponseCode["REQUEST_HEADER_FIELDS_TOO_LARGE"] = 431] = "REQUEST_HEADER_FIELDS_TOO_LARGE";
-    ResponseCode[ResponseCode["UNAVAILABLE_FOR_LEGAL_REASONS"] = 451] = "UNAVAILABLE_FOR_LEGAL_REASONS";
-    ResponseCode[ResponseCode["INTERNAL_SERVER_ERROR"] = 500] = "INTERNAL_SERVER_ERROR";
-    ResponseCode[ResponseCode["NOT_IMPLEMENTED"] = 501] = "NOT_IMPLEMENTED";
-    ResponseCode[ResponseCode["BAD_GATEWAY"] = 502] = "BAD_GATEWAY";
-    ResponseCode[ResponseCode["SERVICE_UNAVAILABLE"] = 503] = "SERVICE_UNAVAILABLE";
-    ResponseCode[ResponseCode["GATEWAY_TIMEOUT"] = 504] = "GATEWAY_TIMEOUT";
-    ResponseCode[ResponseCode["HTTP_VERSION_NOT_SUPPORTED"] = 505] = "HTTP_VERSION_NOT_SUPPORTED";
-    ResponseCode[ResponseCode["VARIANT_ALSO_NEGOTIATES"] = 506] = "VARIANT_ALSO_NEGOTIATES";
-    ResponseCode[ResponseCode["INSUFFICIENT_STORAGE"] = 507] = "INSUFFICIENT_STORAGE";
-    ResponseCode[ResponseCode["LOOP_DETECTED"] = 508] = "LOOP_DETECTED";
-    ResponseCode[ResponseCode["NOT_EXTENDED"] = 510] = "NOT_EXTENDED";
-    ResponseCode[ResponseCode["NETWORK_AUTHENTICATION_REQUIRED"] = 511] = "NETWORK_AUTHENTICATION_REQUIRED";
-})(ResponseCode || (ResponseCode = {}));
-/**
- * List of HTTP Resonse Messages as described on MDN Documentation
- * @link https://developer.mozilla.org/en-US/docs/Web/HTTP/Status
- */
-var ResponseMessage;
-(function (ResponseMessage) {
-    ResponseMessage["CONTINUE"] = "100 Continue";
-    ResponseMessage["SWITCHING_PROTOCOLS"] = "101 Switching Protocols";
-    ResponseMessage["PROCESSING"] = "102 Processing";
-    ResponseMessage["EARLY_HINTS"] = "103 Early Hints";
-    ResponseMessage["OK"] = "200 OK";
-    ResponseMessage["CREATED"] = "201 Created";
-    ResponseMessage["ACCEPTED"] = "202 Accepted";
-    ResponseMessage["NON_AUTHORITATIVE_INFORMATION"] = "203 Non-Authoritative Information";
-    ResponseMessage["NO_CONTENT"] = "204 No Content";
-    ResponseMessage["RESET_CONTENT"] = "205 Reset Content";
-    ResponseMessage["PARTIAL_CONTENT"] = "206 Partial Content";
-    ResponseMessage["MULTI_STATUS"] = "207 Multi-Status";
-    ResponseMessage["IM_USED"] = "226 IM Used";
-    ResponseMessage["ALREADY_REPORTED"] = "208 Already Reported";
-    ResponseMessage["MULTIPLE_CHOICES"] = "300 Multiple Choices";
-    ResponseMessage["MOVED_PERMANENTLY"] = "301 Moved Permanently";
-    ResponseMessage["FOUND"] = "302 Found";
-    ResponseMessage["SEE_OTHER"] = "303 See Other";
-    ResponseMessage["NOT_MODIFIED"] = "304 Not Modified";
-    ResponseMessage["USE_PROXY"] = "305 Use Proxy";
-    ResponseMessage["RESERVED"] = "306 unused";
-    ResponseMessage["TEMPORARY_REDIRECT"] = "307 Temporary Redirect";
-    ResponseMessage["PERMANENT_REDIRECT"] = "308 Permanent Redirect";
-    ResponseMessage["BAD_REQUEST"] = "400 Bad Request";
-    ResponseMessage["UNAUTHORIZED"] = "401 Unauthorized";
-    ResponseMessage["PAYMENT_REQUIRED"] = "402 Payment Required";
-    ResponseMessage["FORBIDDEN"] = "403 Forbidden";
-    ResponseMessage["NOT_FOUND"] = "404 Not Found";
-    ResponseMessage["METHOD_NOT_ALLOWED"] = "405 Method Not Allowed";
-    ResponseMessage["NOT_ACCEPTABLE"] = "406 Not Acceptable";
-    ResponseMessage["PROXY_AUTHENTICATION_REQUIRED"] = "407 Proxy Authentication Required";
-    ResponseMessage["REQUEST_TIMEOUT"] = "408 Request Timeout";
-    ResponseMessage["CONFLICT"] = "409 Conflict";
-    ResponseMessage["GONE"] = "410 Gone";
-    ResponseMessage["LENGTH_REQUIRED"] = "411 Length Required";
-    ResponseMessage["PRECONDITION_FAILED"] = "412 Precondition Failed";
-    ResponseMessage["PAYLOAD_TOO_LARGE"] = "413 Payload Too Large";
-    ResponseMessage["URI_TOO_LONG"] = "414 URI Too Long";
-    ResponseMessage["UNSUPPORTED_MEDIA_TYPE"] = "415 Unsupported Media Type";
-    ResponseMessage["RANGE_NOT_SATISFIABLE"] = "416 Range Not Satisfiable";
-    ResponseMessage["EXPECTATION_FAILED"] = "417 Expectation Failed";
-    ResponseMessage["I_AM_A_TEAPOT"] = "418 I'm a teapot";
-    ResponseMessage["MISDIRECTED_REQUEST"] = "421 Misdirected Request";
-    ResponseMessage["UNPROCESSABLE_ENTITY"] = "422 Unprocessable Entity";
-    ResponseMessage["LOCKED"] = "423 Locked";
-    ResponseMessage["FAILED_DEPENDENCY"] = "424 Failed Dependency";
-    ResponseMessage["TOO_EARLY"] = "425 Too Early";
-    ResponseMessage["UPGRADE_REQUIRED"] = "426 Upgrade Required";
-    ResponseMessage["PRECONDITION_REQUIRED"] = "428 Precondition Required";
-    ResponseMessage["TOO_MANY_REQUESTS"] = "429 Too Many Requests";
-    ResponseMessage["REQUEST_HEADER_FIELDS_TOO_LARGE"] = "431 Request Header Fields Too Large";
-    ResponseMessage["UNAVAILABLE_FOR_LEGAL_REASONS"] = "451 Unavailable For Legal Reasons";
-    ResponseMessage["INTERNAL_SERVER_ERROR"] = "500 Internal Server Error";
-    ResponseMessage["NOT_IMPLEMENTED"] = "501 Not Implemented";
-    ResponseMessage["BAD_GATEWAY"] = "502 Bad Gateway";
-    ResponseMessage["SERVICE_UNAVAILABLE"] = "503 Service Unavailable";
-    ResponseMessage["GATEWAY_TIMEOUT"] = "504 Gateway Timeout";
-    ResponseMessage["HTTP_VERSION_NOT_SUPPORTED"] = "505 HTTP Version Not Supported";
-    ResponseMessage["VARIANT_ALSO_NEGOTIATES"] = "506 Variant Also Negotiates";
-    ResponseMessage["INSUFFICIENT_STORAGE"] = "507 Insufficient Storage";
-    ResponseMessage["LOOP_DETECTED"] = "508 Loop Detected";
-    ResponseMessage["NOT_EXTENDED"] = "510 Not Extended";
-    ResponseMessage["NETWORK_AUTHENTICATION_REQUIRED"] = "511 Network Authentication Required";
-})(ResponseMessage || (ResponseMessage = {}));
+var HttpRequestHeader;
+(function (HttpRequestHeader) {
+    HttpRequestHeader["ACCEPT"] = "Accept";
+    HttpRequestHeader["ACCEPT_CH"] = "Accept-CH";
+    HttpRequestHeader["ACCEPT_CH_LIFETIME"] = "Accept-CH-Lifetime";
+    HttpRequestHeader["ACCEPT_CHARSET"] = "Accept-Charset";
+    HttpRequestHeader["ACCEPT_ENCODING"] = "Accept-Encoding";
+    HttpRequestHeader["ACCEPT_LANGUAGE"] = "Accept-Language";
+    HttpRequestHeader["ACCEPT_PATCH"] = "Accept-Patch";
+    HttpRequestHeader["ACCEPT_RANGES"] = "Accept-Ranges";
+    HttpRequestHeader["ACCESS_CONTROL_ALLOW_CREDENTIALS"] = "Access-Control-Allow-Credentials";
+    HttpRequestHeader["ACCESS_CONTROL_ALLOW_HEADERS"] = "Access-Control-Allow-Headers";
+    HttpRequestHeader["ACCESS_CONTROL_ALLOW_METHODS"] = "Access-Control-Allow-Methods";
+    HttpRequestHeader["ACCESS_CONTROL_ALLOW_ORIGIN"] = "Access-Control-Allow-Origin";
+    HttpRequestHeader["ACCESS_CONTROL_EXPOSE_HEADERS"] = "Access-Control-Expose-Headers";
+    HttpRequestHeader["ACCESS_CONTROL_MAX_AGE"] = "Access-Control-Max-Age";
+    HttpRequestHeader["ACCESS_CONTROL_REQUEST_HEADERS"] = "Access-Control-Request-Headers";
+    HttpRequestHeader["ACCESS_CONTROL_REQUEST_METHOD"] = "Access-Control-Request-Method";
+    HttpRequestHeader["AGE"] = "Age";
+    HttpRequestHeader["ALLOW"] = "Allow";
+    HttpRequestHeader["ALT_SVC"] = "Alt-Svc";
+    HttpRequestHeader["AUTHORIZATION"] = "Authorization";
+    HttpRequestHeader["CACHE_CONTROL"] = "Cache-Control";
+    HttpRequestHeader["CLEAR_SITE_DATA"] = "Clear-Site-Data";
+    HttpRequestHeader["CONNECTION"] = "Connection";
+    HttpRequestHeader["CONTENT_DISPOSITION"] = "Content-Disposition";
+    HttpRequestHeader["CONTENT_ENCODING"] = "Content-Encoding";
+    HttpRequestHeader["CONTENT_LANGUAGE"] = "Content-Language";
+    HttpRequestHeader["CONTENT_LENGTH"] = "Content-Length";
+    HttpRequestHeader["CONTENT_LOCATION"] = "Content-Location";
+    HttpRequestHeader["CONTENT_RANGE"] = "Content-Range";
+    HttpRequestHeader["CONTENT_SECURITY_POLICY"] = "Content-Security-Policy";
+    HttpRequestHeader["CONTENT_SECURITY_POLICY_REPORT_ONLY"] = "Content-Security-Policy-Report-Only";
+    HttpRequestHeader["CONTENT_TYPE"] = "Content-Type";
+    HttpRequestHeader["COOKIE"] = "Cookie";
+    HttpRequestHeader["COOKIE2"] = "Cookie2";
+    HttpRequestHeader["CROSS_ORIGIN_RESOURCE_POLICY"] = "Cross-Origin-Resource-Policy";
+    HttpRequestHeader["DNT"] = "DNT";
+    HttpRequestHeader["DPR"] = "DPR";
+    HttpRequestHeader["DATE"] = "Date";
+    HttpRequestHeader["DEVICE_MEMORY"] = "Device-Memory";
+    HttpRequestHeader["DIGEST"] = "Digest";
+    HttpRequestHeader["ETAG"] = "ETag";
+    HttpRequestHeader["EARLY_DATA"] = "Early-Data";
+    HttpRequestHeader["EXPECT"] = "Expect";
+    HttpRequestHeader["EXPECT_CT"] = "Expect-CT";
+    HttpRequestHeader["EXPIRES"] = "Expires";
+    HttpRequestHeader["FEATURE_POLICY"] = "Feature-Policy";
+    HttpRequestHeader["FORWARDED"] = "Forwarded";
+    HttpRequestHeader["FROM"] = "From";
+    HttpRequestHeader["HOST"] = "Host";
+    HttpRequestHeader["IF_MATCH"] = "If-Match";
+    HttpRequestHeader["IF_MODIFIED_SINCE"] = "If-Modified-Since";
+    HttpRequestHeader["IF_NONE_MATCH"] = "If-None-Match";
+    HttpRequestHeader["IF_RANGE"] = "If-Range";
+    HttpRequestHeader["IF_UNMODIFIED_SINCE"] = "If-Unmodified-Since";
+    HttpRequestHeader["INDEX"] = "Index";
+    HttpRequestHeader["KEEP_ALIVE"] = "Keep-Alive";
+    HttpRequestHeader["LARGE_ALLOCATION"] = "Large-Allocation";
+    HttpRequestHeader["LAST_MODIFIED"] = "Last-Modified";
+    HttpRequestHeader["LINK"] = "Link";
+    HttpRequestHeader["LOCATION"] = "Location";
+    HttpRequestHeader["ORIGIN"] = "Origin";
+    HttpRequestHeader["PRAGMA"] = "Pragma";
+    HttpRequestHeader["PROXY_AUTHENTICATE"] = "Proxy-Authenticate";
+    HttpRequestHeader["PROXY_AUTHORIZATION"] = "Proxy-Authorization";
+    HttpRequestHeader["PUBLIC_KEY_PINS"] = "Public-Key-Pins";
+    HttpRequestHeader["PUBLIC_KEY_PINS_REPORT_ONLY"] = "Public-Key-Pins-Report-Only";
+    HttpRequestHeader["RANGE"] = "Range";
+    HttpRequestHeader["REFERER"] = "Referer";
+    HttpRequestHeader["REFERRER_POLICY"] = "Referrer-Policy";
+    HttpRequestHeader["RETRY_AFTER"] = "Retry-After";
+    HttpRequestHeader["SAVE_DATA"] = "Save-Data";
+    HttpRequestHeader["SEC_WEBSOCKET_ACCEPT"] = "Sec-WebSocket-Accept";
+    HttpRequestHeader["SERVER"] = "Server";
+    HttpRequestHeader["SERVER_TIMING"] = "Server-Timing";
+    HttpRequestHeader["SET_COOKIE"] = "Set-Cookie";
+    HttpRequestHeader["SET_COOKIE2"] = "Set-Cookie2";
+    HttpRequestHeader["SOURCEMAP"] = "SourceMap";
+    HttpRequestHeader["STRICT_TRANSPORT_SECURITY"] = "Strict-Transport-Security";
+    HttpRequestHeader["TE"] = "TE";
+    HttpRequestHeader["TIMING_ALLOW_ORIGIN"] = "Timing-Allow-Origin";
+    HttpRequestHeader["TK"] = "Tk";
+    HttpRequestHeader["TRAILER"] = "Trailer";
+    HttpRequestHeader["TRANSFER_ENCODING"] = "Transfer-Encoding";
+    HttpRequestHeader["UPGRADE_INSECURE_REQUESTS"] = "Upgrade-Insecure-Requests";
+    HttpRequestHeader["USER_AGENT"] = "User-Agent";
+    HttpRequestHeader["VARY"] = "Vary";
+    HttpRequestHeader["VIA"] = "Via";
+    HttpRequestHeader["WWW_AUTHENTICATE"] = "WWW-Authenticate";
+    HttpRequestHeader["WANT_DIGEST"] = "Want-Digest";
+    HttpRequestHeader["WARNING"] = "Warning";
+    HttpRequestHeader["X_CONTENT_TYPE_OPTIONS"] = "X-Content-Type-Options";
+    HttpRequestHeader["X_DNS_PREFETCH_CONTROL"] = "X-DNS-Prefetch-Control";
+    HttpRequestHeader["X_FORWARDED_FOR"] = "X-Forwarded-For";
+    HttpRequestHeader["X_FORWARDED_HOST"] = "X-Forwarded-Host";
+    HttpRequestHeader["X_FORWARDED_PROTO"] = "X-Forwarded-Proto";
+    HttpRequestHeader["X_FRAME_OPTIONS"] = "X-Frame-Options";
+    HttpRequestHeader["X_XSS_PROTECTION"] = "X-XSS-Protection";
+})(HttpRequestHeader || (HttpRequestHeader = {}));
 /**
  * List of Request Methods as described on MDN Documentation
  * @link https://developer.mozilla.org/en-US/docs/Web/HTTP/Methods
  */
-var RequestMethod;
-(function (RequestMethod) {
-    RequestMethod["ALL"] = "all";
+var HttpRequestMethod;
+(function (HttpRequestMethod) {
+    HttpRequestMethod["ALL"] = "all";
     /**
      * The CONNECT method establishes a tunnel to the server identified by the target  resource.
      */
-    RequestMethod["CONNECT"] = "connect";
+    HttpRequestMethod["CONNECT"] = "connect";
     /**
      * The DELETE method deletes the specified resource.
      */
-    RequestMethod["DELETE"] = "delete";
+    HttpRequestMethod["DELETE"] = "delete";
     /**
      * The GET method requests a representation of the specified resource. Requests using GET should only retrieve data.
      */
-    RequestMethod["GET"] = "get";
+    HttpRequestMethod["GET"] = "get";
     /**
      * The HEAD method asks for a response identical to that of a GET request, but without the response body.
      */
-    RequestMethod["HEAD"] = "head";
+    HttpRequestMethod["HEAD"] = "head";
     /**
      * The OPTIONS method is used to describe the communication options for the target resource.
      */
-    RequestMethod["OPTIONS"] = "options";
+    HttpRequestMethod["OPTIONS"] = "options";
     /**
      * The PATCH method is used to apply partial modifications to a resource.
      */
-    RequestMethod["PATCH"] = "patch";
+    HttpRequestMethod["PATCH"] = "patch";
     /**
      * The POST method is used to submit an entity to the specified resource, often causing a change in state or side
      * effects on the server.
      */
-    RequestMethod["POST"] = "post";
+    HttpRequestMethod["POST"] = "post";
     /**
      * The PUT method replaces all current representations of the target resource with the request payload.
      */
-    RequestMethod["PUT"] = "put";
+    HttpRequestMethod["PUT"] = "put";
     /**
      * The TRACE method performs a message loop-back test along the path to the target resource.
      */
-    RequestMethod["TRACE"] = "trace";
-})(RequestMethod || (RequestMethod = {}));
+    HttpRequestMethod["TRACE"] = "trace";
+})(HttpRequestMethod || (HttpRequestMethod = {}));
 
-var ArgumentSource;
-(function (ArgumentSource) {
-    ArgumentSource["REQUEST"] = "request";
-    ArgumentSource["RESPONSE"] = "response";
-})(ArgumentSource || (ArgumentSource = {}));
+/**
+ * Sources for Http Arguments
+ */
+var HttpArgumentSource;
+(function (HttpArgumentSource) {
+    HttpArgumentSource["REQUEST"] = "request";
+    HttpArgumentSource["RESPONSE"] = "response";
+})(HttpArgumentSource || (HttpArgumentSource = {}));
 /******************************************************************************
  *
  * Helpers
@@ -364,7 +299,7 @@ const Header = (key) => {
  */
 const Ip = () => {
     return (target, methodKey, parameterIndex) => {
-        appendParameterMapper(target, methodKey, parameterIndex, (req) => req.headers[RequestHeader.X_FORWARDED_FOR.toLowerCase()]);
+        appendParameterMapper(target, methodKey, parameterIndex, (req) => req.headers[HttpRequestHeader.X_FORWARDED_FOR.toLowerCase()]);
     };
 };
 /**
@@ -401,12 +336,9 @@ const Req = () => {
  */
 const Res = () => {
     return (target, methodKey, parameterIndex) => {
-        appendParameterMapper(target, methodKey, parameterIndex, (res) => res, ArgumentSource.RESPONSE);
+        appendParameterMapper(target, methodKey, parameterIndex, (res) => res, HttpArgumentSource.RESPONSE);
     };
 };
-// /**
-//  * @Redirect(url: string, code: number = 301)
-//  */
 /******************************************************************************
  *
  * Helpers
@@ -440,7 +372,7 @@ const readRequestBody = async (req) => new Promise((resolve, reject) => {
  * @param callable
  * @param source
  */
-const appendParameterMapper = (target, methodName, parameterIndex, callable, source = ArgumentSource.REQUEST) => {
+const appendParameterMapper = (target, methodName, parameterIndex, callable, source = HttpArgumentSource.REQUEST) => {
     // calculate method (name) descriptor
     const methodDescriptor = methodArgumentsDescriptor(methodName);
     // can't set ParameterDescriptor[] type due to creation of an array of zeros
@@ -496,6 +428,154 @@ const RespondWithJson = (...args) => RespondWith(JSON.stringify, ...args);
  */
 const RespondWithYaml = (...args) => RespondWith(YAML.stringify, ...args);
 
+class HttpResponse extends ServerResponse {
+}
+
+class Http2Response extends Http2ServerResponse {
+}
+
+/**
+ * List of HTTP Resonse Codes as described on MDN Documentation
+ * @link https://developer.mozilla.org/en-US/docs/Web/HTTP/Status
+ * @link https://github.com/symfony/http-foundation/blob/master/Response.php
+ */
+var HttpResponseCode;
+(function (HttpResponseCode) {
+    HttpResponseCode[HttpResponseCode["CONTINUE"] = 100] = "CONTINUE";
+    HttpResponseCode[HttpResponseCode["SWITCHING_PROTOCOLS"] = 101] = "SWITCHING_PROTOCOLS";
+    HttpResponseCode[HttpResponseCode["PROCESSING"] = 102] = "PROCESSING";
+    HttpResponseCode[HttpResponseCode["EARLY_HINTS"] = 103] = "EARLY_HINTS";
+    HttpResponseCode[HttpResponseCode["OK"] = 200] = "OK";
+    HttpResponseCode[HttpResponseCode["CREATED"] = 201] = "CREATED";
+    HttpResponseCode[HttpResponseCode["ACCEPTED"] = 202] = "ACCEPTED";
+    HttpResponseCode[HttpResponseCode["NON_AUTHORITATIVE_INFORMATION"] = 203] = "NON_AUTHORITATIVE_INFORMATION";
+    HttpResponseCode[HttpResponseCode["NO_CONTENT"] = 204] = "NO_CONTENT";
+    HttpResponseCode[HttpResponseCode["RESET_CONTENT"] = 205] = "RESET_CONTENT";
+    HttpResponseCode[HttpResponseCode["PARTIAL_CONTENT"] = 206] = "PARTIAL_CONTENT";
+    HttpResponseCode[HttpResponseCode["MULTI_STATUS"] = 207] = "MULTI_STATUS";
+    HttpResponseCode[HttpResponseCode["ALREADY_REPORTED"] = 208] = "ALREADY_REPORTED";
+    HttpResponseCode[HttpResponseCode["IM_USED"] = 226] = "IM_USED";
+    HttpResponseCode[HttpResponseCode["MULTIPLE_CHOICES"] = 300] = "MULTIPLE_CHOICES";
+    HttpResponseCode[HttpResponseCode["MOVED_PERMANENTLY"] = 301] = "MOVED_PERMANENTLY";
+    HttpResponseCode[HttpResponseCode["FOUND"] = 302] = "FOUND";
+    HttpResponseCode[HttpResponseCode["SEE_OTHER"] = 303] = "SEE_OTHER";
+    HttpResponseCode[HttpResponseCode["NOT_MODIFIED"] = 304] = "NOT_MODIFIED";
+    HttpResponseCode[HttpResponseCode["USE_PROXY"] = 305] = "USE_PROXY";
+    HttpResponseCode[HttpResponseCode["RESERVED"] = 306] = "RESERVED";
+    HttpResponseCode[HttpResponseCode["TEMPORARY_REDIRECT"] = 307] = "TEMPORARY_REDIRECT";
+    HttpResponseCode[HttpResponseCode["PERMANENTLY_REDIRECT"] = 308] = "PERMANENTLY_REDIRECT";
+    HttpResponseCode[HttpResponseCode["BAD_REQUEST"] = 400] = "BAD_REQUEST";
+    HttpResponseCode[HttpResponseCode["UNAUTHORIZED"] = 401] = "UNAUTHORIZED";
+    HttpResponseCode[HttpResponseCode["PAYMENT_REQUIRED"] = 402] = "PAYMENT_REQUIRED";
+    HttpResponseCode[HttpResponseCode["FORBIDDEN"] = 403] = "FORBIDDEN";
+    HttpResponseCode[HttpResponseCode["NOT_FOUND"] = 404] = "NOT_FOUND";
+    HttpResponseCode[HttpResponseCode["METHOD_NOT_ALLOWED"] = 405] = "METHOD_NOT_ALLOWED";
+    HttpResponseCode[HttpResponseCode["NOT_ACCEPTABLE"] = 406] = "NOT_ACCEPTABLE";
+    HttpResponseCode[HttpResponseCode["PROXY_AUTHENTICATION_REQUIRED"] = 407] = "PROXY_AUTHENTICATION_REQUIRED";
+    HttpResponseCode[HttpResponseCode["REQUEST_TIMEOUT"] = 408] = "REQUEST_TIMEOUT";
+    HttpResponseCode[HttpResponseCode["CONFLICT"] = 409] = "CONFLICT";
+    HttpResponseCode[HttpResponseCode["GONE"] = 410] = "GONE";
+    HttpResponseCode[HttpResponseCode["LENGTH_REQUIRED"] = 411] = "LENGTH_REQUIRED";
+    HttpResponseCode[HttpResponseCode["PRECONDITION_FAILED"] = 412] = "PRECONDITION_FAILED";
+    HttpResponseCode[HttpResponseCode["PAYLOAD_TOO_LARGE"] = 413] = "PAYLOAD_TOO_LARGE";
+    HttpResponseCode[HttpResponseCode["URI_TOO_LONG"] = 414] = "URI_TOO_LONG";
+    HttpResponseCode[HttpResponseCode["UNSUPPORTED_MEDIA_TYPE"] = 415] = "UNSUPPORTED_MEDIA_TYPE";
+    HttpResponseCode[HttpResponseCode["RANGE_NOT_SATISFIABLE"] = 416] = "RANGE_NOT_SATISFIABLE";
+    HttpResponseCode[HttpResponseCode["EXPECTATION_FAILED"] = 417] = "EXPECTATION_FAILED";
+    HttpResponseCode[HttpResponseCode["I_AM_A_TEAPOT"] = 418] = "I_AM_A_TEAPOT";
+    HttpResponseCode[HttpResponseCode["MISDIRECTED_REQUEST"] = 421] = "MISDIRECTED_REQUEST";
+    HttpResponseCode[HttpResponseCode["UNPROCESSABLE_ENTITY"] = 422] = "UNPROCESSABLE_ENTITY";
+    HttpResponseCode[HttpResponseCode["LOCKED"] = 423] = "LOCKED";
+    HttpResponseCode[HttpResponseCode["FAILED_DEPENDENCY"] = 424] = "FAILED_DEPENDENCY";
+    HttpResponseCode[HttpResponseCode["TOO_EARLY"] = 425] = "TOO_EARLY";
+    HttpResponseCode[HttpResponseCode["UPGRADE_REQUIRED"] = 426] = "UPGRADE_REQUIRED";
+    HttpResponseCode[HttpResponseCode["PRECONDITION_REQUIRED"] = 428] = "PRECONDITION_REQUIRED";
+    HttpResponseCode[HttpResponseCode["TOO_MANY_REQUESTS"] = 429] = "TOO_MANY_REQUESTS";
+    HttpResponseCode[HttpResponseCode["REQUEST_HEADER_FIELDS_TOO_LARGE"] = 431] = "REQUEST_HEADER_FIELDS_TOO_LARGE";
+    HttpResponseCode[HttpResponseCode["UNAVAILABLE_FOR_LEGAL_REASONS"] = 451] = "UNAVAILABLE_FOR_LEGAL_REASONS";
+    HttpResponseCode[HttpResponseCode["INTERNAL_SERVER_ERROR"] = 500] = "INTERNAL_SERVER_ERROR";
+    HttpResponseCode[HttpResponseCode["NOT_IMPLEMENTED"] = 501] = "NOT_IMPLEMENTED";
+    HttpResponseCode[HttpResponseCode["BAD_GATEWAY"] = 502] = "BAD_GATEWAY";
+    HttpResponseCode[HttpResponseCode["SERVICE_UNAVAILABLE"] = 503] = "SERVICE_UNAVAILABLE";
+    HttpResponseCode[HttpResponseCode["GATEWAY_TIMEOUT"] = 504] = "GATEWAY_TIMEOUT";
+    HttpResponseCode[HttpResponseCode["HTTP_VERSION_NOT_SUPPORTED"] = 505] = "HTTP_VERSION_NOT_SUPPORTED";
+    HttpResponseCode[HttpResponseCode["VARIANT_ALSO_NEGOTIATES"] = 506] = "VARIANT_ALSO_NEGOTIATES";
+    HttpResponseCode[HttpResponseCode["INSUFFICIENT_STORAGE"] = 507] = "INSUFFICIENT_STORAGE";
+    HttpResponseCode[HttpResponseCode["LOOP_DETECTED"] = 508] = "LOOP_DETECTED";
+    HttpResponseCode[HttpResponseCode["NOT_EXTENDED"] = 510] = "NOT_EXTENDED";
+    HttpResponseCode[HttpResponseCode["NETWORK_AUTHENTICATION_REQUIRED"] = 511] = "NETWORK_AUTHENTICATION_REQUIRED";
+})(HttpResponseCode || (HttpResponseCode = {}));
+/**
+ * List of HTTP Resonse Messages as described on MDN Documentation
+ * @link https://developer.mozilla.org/en-US/docs/Web/HTTP/Status
+ */
+var HttpResponseMessage;
+(function (HttpResponseMessage) {
+    HttpResponseMessage["CONTINUE"] = "100 Continue";
+    HttpResponseMessage["SWITCHING_PROTOCOLS"] = "101 Switching Protocols";
+    HttpResponseMessage["PROCESSING"] = "102 Processing";
+    HttpResponseMessage["EARLY_HINTS"] = "103 Early Hints";
+    HttpResponseMessage["OK"] = "200 OK";
+    HttpResponseMessage["CREATED"] = "201 Created";
+    HttpResponseMessage["ACCEPTED"] = "202 Accepted";
+    HttpResponseMessage["NON_AUTHORITATIVE_INFORMATION"] = "203 Non-Authoritative Information";
+    HttpResponseMessage["NO_CONTENT"] = "204 No Content";
+    HttpResponseMessage["RESET_CONTENT"] = "205 Reset Content";
+    HttpResponseMessage["PARTIAL_CONTENT"] = "206 Partial Content";
+    HttpResponseMessage["MULTI_STATUS"] = "207 Multi-Status";
+    HttpResponseMessage["IM_USED"] = "226 IM Used";
+    HttpResponseMessage["ALREADY_REPORTED"] = "208 Already Reported";
+    HttpResponseMessage["MULTIPLE_CHOICES"] = "300 Multiple Choices";
+    HttpResponseMessage["MOVED_PERMANENTLY"] = "301 Moved Permanently";
+    HttpResponseMessage["FOUND"] = "302 Found";
+    HttpResponseMessage["SEE_OTHER"] = "303 See Other";
+    HttpResponseMessage["NOT_MODIFIED"] = "304 Not Modified";
+    HttpResponseMessage["USE_PROXY"] = "305 Use Proxy";
+    HttpResponseMessage["RESERVED"] = "306 unused";
+    HttpResponseMessage["TEMPORARY_REDIRECT"] = "307 Temporary Redirect";
+    HttpResponseMessage["PERMANENT_REDIRECT"] = "308 Permanent Redirect";
+    HttpResponseMessage["BAD_REQUEST"] = "400 Bad Request";
+    HttpResponseMessage["UNAUTHORIZED"] = "401 Unauthorized";
+    HttpResponseMessage["PAYMENT_REQUIRED"] = "402 Payment Required";
+    HttpResponseMessage["FORBIDDEN"] = "403 Forbidden";
+    HttpResponseMessage["NOT_FOUND"] = "404 Not Found";
+    HttpResponseMessage["METHOD_NOT_ALLOWED"] = "405 Method Not Allowed";
+    HttpResponseMessage["NOT_ACCEPTABLE"] = "406 Not Acceptable";
+    HttpResponseMessage["PROXY_AUTHENTICATION_REQUIRED"] = "407 Proxy Authentication Required";
+    HttpResponseMessage["REQUEST_TIMEOUT"] = "408 Request Timeout";
+    HttpResponseMessage["CONFLICT"] = "409 Conflict";
+    HttpResponseMessage["GONE"] = "410 Gone";
+    HttpResponseMessage["LENGTH_REQUIRED"] = "411 Length Required";
+    HttpResponseMessage["PRECONDITION_FAILED"] = "412 Precondition Failed";
+    HttpResponseMessage["PAYLOAD_TOO_LARGE"] = "413 Payload Too Large";
+    HttpResponseMessage["URI_TOO_LONG"] = "414 URI Too Long";
+    HttpResponseMessage["UNSUPPORTED_MEDIA_TYPE"] = "415 Unsupported Media Type";
+    HttpResponseMessage["RANGE_NOT_SATISFIABLE"] = "416 Range Not Satisfiable";
+    HttpResponseMessage["EXPECTATION_FAILED"] = "417 Expectation Failed";
+    HttpResponseMessage["I_AM_A_TEAPOT"] = "418 I'm a teapot";
+    HttpResponseMessage["MISDIRECTED_REQUEST"] = "421 Misdirected Request";
+    HttpResponseMessage["UNPROCESSABLE_ENTITY"] = "422 Unprocessable Entity";
+    HttpResponseMessage["LOCKED"] = "423 Locked";
+    HttpResponseMessage["FAILED_DEPENDENCY"] = "424 Failed Dependency";
+    HttpResponseMessage["TOO_EARLY"] = "425 Too Early";
+    HttpResponseMessage["UPGRADE_REQUIRED"] = "426 Upgrade Required";
+    HttpResponseMessage["PRECONDITION_REQUIRED"] = "428 Precondition Required";
+    HttpResponseMessage["TOO_MANY_REQUESTS"] = "429 Too Many Requests";
+    HttpResponseMessage["REQUEST_HEADER_FIELDS_TOO_LARGE"] = "431 Request Header Fields Too Large";
+    HttpResponseMessage["UNAVAILABLE_FOR_LEGAL_REASONS"] = "451 Unavailable For Legal Reasons";
+    HttpResponseMessage["INTERNAL_SERVER_ERROR"] = "500 Internal Server Error";
+    HttpResponseMessage["NOT_IMPLEMENTED"] = "501 Not Implemented";
+    HttpResponseMessage["BAD_GATEWAY"] = "502 Bad Gateway";
+    HttpResponseMessage["SERVICE_UNAVAILABLE"] = "503 Service Unavailable";
+    HttpResponseMessage["GATEWAY_TIMEOUT"] = "504 Gateway Timeout";
+    HttpResponseMessage["HTTP_VERSION_NOT_SUPPORTED"] = "505 HTTP Version Not Supported";
+    HttpResponseMessage["VARIANT_ALSO_NEGOTIATES"] = "506 Variant Also Negotiates";
+    HttpResponseMessage["INSUFFICIENT_STORAGE"] = "507 Insufficient Storage";
+    HttpResponseMessage["LOOP_DETECTED"] = "508 Loop Detected";
+    HttpResponseMessage["NOT_EXTENDED"] = "510 Not Extended";
+    HttpResponseMessage["NETWORK_AUTHENTICATION_REQUIRED"] = "511 Network Authentication Required";
+})(HttpResponseMessage || (HttpResponseMessage = {}));
+
 /**
  * @link https://github.com/nestjs/nest/blob/master/packages/common/exceptions/http.exception.ts
  */
@@ -540,352 +620,284 @@ class HttpException extends Error {
  * 401 Unauthorized Exception
  */
 class UnauthorizedException extends HttpException {
-    constructor(message, error = ResponseMessage.UNAUTHORIZED) {
-        super(HttpException.createBody(message, error, ResponseCode.UNAUTHORIZED), ResponseCode.UNAUTHORIZED);
+    constructor(message, error = HttpResponseMessage.UNAUTHORIZED) {
+        super(HttpException.createBody(message, error, HttpResponseCode.UNAUTHORIZED), HttpResponseCode.UNAUTHORIZED);
     }
 }
 /**
  * 402 Payment Required Exception
  */
 class PaymentRequiredException extends HttpException {
-    constructor(message, error = ResponseMessage.PAYMENT_REQUIRED) {
-        super(HttpException.createBody(message, error, ResponseCode.PAYMENT_REQUIRED), ResponseCode.PAYMENT_REQUIRED);
+    constructor(message, error = HttpResponseMessage.PAYMENT_REQUIRED) {
+        super(HttpException.createBody(message, error, HttpResponseCode.PAYMENT_REQUIRED), HttpResponseCode.PAYMENT_REQUIRED);
     }
 }
 /**
  * 403 Forbidden Exception
  */
 class ForbiddenException extends HttpException {
-    constructor(message, error = ResponseMessage.FORBIDDEN) {
-        super(HttpException.createBody(message, error, ResponseCode.FORBIDDEN), ResponseCode.FORBIDDEN);
+    constructor(message, error = HttpResponseMessage.FORBIDDEN) {
+        super(HttpException.createBody(message, error, HttpResponseCode.FORBIDDEN), HttpResponseCode.FORBIDDEN);
     }
 }
 /**
  * 404 Not Found Exception
  */
 class NotFoundException extends HttpException {
-    constructor(message, error = ResponseMessage.NOT_FOUND) {
-        super(HttpException.createBody(message, error, ResponseCode.NOT_FOUND), ResponseCode.NOT_FOUND);
+    constructor(message, error = HttpResponseMessage.NOT_FOUND) {
+        super(HttpException.createBody(message, error, HttpResponseCode.NOT_FOUND), HttpResponseCode.NOT_FOUND);
     }
 }
 /**
  * 405 Method Not Allowed Exception
  */
 class MethodNotAllowedException extends HttpException {
-    constructor(message, error = ResponseMessage.METHOD_NOT_ALLOWED) {
-        super(HttpException.createBody(message, error, ResponseCode.METHOD_NOT_ALLOWED), ResponseCode.METHOD_NOT_ALLOWED);
+    constructor(message, error = HttpResponseMessage.METHOD_NOT_ALLOWED) {
+        super(HttpException.createBody(message, error, HttpResponseCode.METHOD_NOT_ALLOWED), HttpResponseCode.METHOD_NOT_ALLOWED);
     }
 }
 /**
  * 406 Not Acceptable Exception
  */
 class NotAcceptableException extends HttpException {
-    constructor(message, error = ResponseMessage.NOT_ACCEPTABLE) {
-        super(HttpException.createBody(message, error, ResponseCode.NOT_ACCEPTABLE), ResponseCode.NOT_ACCEPTABLE);
+    constructor(message, error = HttpResponseMessage.NOT_ACCEPTABLE) {
+        super(HttpException.createBody(message, error, HttpResponseCode.NOT_ACCEPTABLE), HttpResponseCode.NOT_ACCEPTABLE);
     }
 }
 /**
  * 407 Proxy Authentication Required Exception
  */
 class ProxyAuthenticationRequiredException extends HttpException {
-    constructor(message, error = ResponseMessage.PROXY_AUTHENTICATION_REQUIRED) {
-        super(HttpException.createBody(message, error, ResponseCode.PROXY_AUTHENTICATION_REQUIRED), ResponseCode.PROXY_AUTHENTICATION_REQUIRED);
+    constructor(message, error = HttpResponseMessage.PROXY_AUTHENTICATION_REQUIRED) {
+        super(HttpException.createBody(message, error, HttpResponseCode.PROXY_AUTHENTICATION_REQUIRED), HttpResponseCode.PROXY_AUTHENTICATION_REQUIRED);
     }
 }
 /**
  * 408 Request Timeout Exception
  */
 class RequestTimeoutException extends HttpException {
-    constructor(message, error = ResponseMessage.REQUEST_TIMEOUT) {
-        super(HttpException.createBody(message, error, ResponseCode.REQUEST_TIMEOUT), ResponseCode.REQUEST_TIMEOUT);
+    constructor(message, error = HttpResponseMessage.REQUEST_TIMEOUT) {
+        super(HttpException.createBody(message, error, HttpResponseCode.REQUEST_TIMEOUT), HttpResponseCode.REQUEST_TIMEOUT);
     }
 }
 /**
  * 409 Conflict Exception
  */
 class ConflictException extends HttpException {
-    constructor(message, error = ResponseMessage.CONFLICT) {
-        super(HttpException.createBody(message, error, ResponseCode.CONFLICT), ResponseCode.CONFLICT);
+    constructor(message, error = HttpResponseMessage.CONFLICT) {
+        super(HttpException.createBody(message, error, HttpResponseCode.CONFLICT), HttpResponseCode.CONFLICT);
     }
 }
 /**
  * 410 Gone Exception
  */
 class GoneException extends HttpException {
-    constructor(message, error = ResponseMessage.GONE) {
-        super(HttpException.createBody(message, error, ResponseCode.GONE), ResponseCode.GONE);
+    constructor(message, error = HttpResponseMessage.GONE) {
+        super(HttpException.createBody(message, error, HttpResponseCode.GONE), HttpResponseCode.GONE);
     }
 }
 /**
  * 411 Length Required Exception
  */
 class LengthRequiredException extends HttpException {
-    constructor(message, error = ResponseMessage.LENGTH_REQUIRED) {
-        super(HttpException.createBody(message, error, ResponseCode.LENGTH_REQUIRED), ResponseCode.LENGTH_REQUIRED);
+    constructor(message, error = HttpResponseMessage.LENGTH_REQUIRED) {
+        super(HttpException.createBody(message, error, HttpResponseCode.LENGTH_REQUIRED), HttpResponseCode.LENGTH_REQUIRED);
     }
 }
 /**
  * 412 Precondition Failed Exception
  */
 class PreconditionFailedException extends HttpException {
-    constructor(message, error = ResponseMessage.PRECONDITION_FAILED) {
-        super(HttpException.createBody(message, error, ResponseCode.PRECONDITION_FAILED), ResponseCode.PRECONDITION_FAILED);
+    constructor(message, error = HttpResponseMessage.PRECONDITION_FAILED) {
+        super(HttpException.createBody(message, error, HttpResponseCode.PRECONDITION_FAILED), HttpResponseCode.PRECONDITION_FAILED);
     }
 }
 /**
  * 413 Payload Too Large Exception
  */
 class PayloadTooLargeException extends HttpException {
-    constructor(message, error = ResponseMessage.PAYLOAD_TOO_LARGE) {
-        super(HttpException.createBody(message, error, ResponseCode.PAYLOAD_TOO_LARGE), ResponseCode.PAYLOAD_TOO_LARGE);
+    constructor(message, error = HttpResponseMessage.PAYLOAD_TOO_LARGE) {
+        super(HttpException.createBody(message, error, HttpResponseCode.PAYLOAD_TOO_LARGE), HttpResponseCode.PAYLOAD_TOO_LARGE);
     }
 }
 /**
  * 414 URI Too Long Exception
  */
 class URITooLongException extends HttpException {
-    constructor(message, error = ResponseMessage.URI_TOO_LONG) {
-        super(HttpException.createBody(message, error, ResponseCode.URI_TOO_LONG), ResponseCode.URI_TOO_LONG);
+    constructor(message, error = HttpResponseMessage.URI_TOO_LONG) {
+        super(HttpException.createBody(message, error, HttpResponseCode.URI_TOO_LONG), HttpResponseCode.URI_TOO_LONG);
     }
 }
 /**
  * 415 Unsupported Media Type Exception
  */
 class UnsupportedMediaTypeException extends HttpException {
-    constructor(message, error = ResponseMessage.UNSUPPORTED_MEDIA_TYPE) {
-        super(HttpException.createBody(message, error, ResponseCode.UNSUPPORTED_MEDIA_TYPE), ResponseCode.UNSUPPORTED_MEDIA_TYPE);
+    constructor(message, error = HttpResponseMessage.UNSUPPORTED_MEDIA_TYPE) {
+        super(HttpException.createBody(message, error, HttpResponseCode.UNSUPPORTED_MEDIA_TYPE), HttpResponseCode.UNSUPPORTED_MEDIA_TYPE);
     }
 }
 /**
  * 416 Range Not Satisfiable Exception
  */
 class RangeNotSatisfiableException extends HttpException {
-    constructor(message, error = ResponseMessage.RANGE_NOT_SATISFIABLE) {
-        super(HttpException.createBody(message, error, ResponseCode.RANGE_NOT_SATISFIABLE), ResponseCode.RANGE_NOT_SATISFIABLE);
+    constructor(message, error = HttpResponseMessage.RANGE_NOT_SATISFIABLE) {
+        super(HttpException.createBody(message, error, HttpResponseCode.RANGE_NOT_SATISFIABLE), HttpResponseCode.RANGE_NOT_SATISFIABLE);
     }
 }
 /**
  * 417 Expectation Failed Exception
  */
 class ExpectationFailedException extends HttpException {
-    constructor(message, error = ResponseMessage.EXPECTATION_FAILED) {
-        super(HttpException.createBody(message, error, ResponseCode.EXPECTATION_FAILED), ResponseCode.EXPECTATION_FAILED);
+    constructor(message, error = HttpResponseMessage.EXPECTATION_FAILED) {
+        super(HttpException.createBody(message, error, HttpResponseCode.EXPECTATION_FAILED), HttpResponseCode.EXPECTATION_FAILED);
     }
 }
 /**
  * 418 I'm a teapot Exception
  */
 class ImateapotException extends HttpException {
-    constructor(message, error = ResponseMessage.I_AM_A_TEAPOT) {
-        super(HttpException.createBody(message, error, ResponseCode.I_AM_A_TEAPOT), ResponseCode.I_AM_A_TEAPOT);
+    constructor(message, error = HttpResponseMessage.I_AM_A_TEAPOT) {
+        super(HttpException.createBody(message, error, HttpResponseCode.I_AM_A_TEAPOT), HttpResponseCode.I_AM_A_TEAPOT);
     }
 }
 /**
  * 422 Unprocessable Entity Exception
  */
 class UnprocessableEntityException extends HttpException {
-    constructor(message, error = ResponseMessage.UNPROCESSABLE_ENTITY) {
-        super(HttpException.createBody(message, error, ResponseCode.UNPROCESSABLE_ENTITY), ResponseCode.UNPROCESSABLE_ENTITY);
+    constructor(message, error = HttpResponseMessage.UNPROCESSABLE_ENTITY) {
+        super(HttpException.createBody(message, error, HttpResponseCode.UNPROCESSABLE_ENTITY), HttpResponseCode.UNPROCESSABLE_ENTITY);
     }
 }
 /**
  * 425 Too Early Exception
  */
 class TooEarlyException extends HttpException {
-    constructor(message, error = ResponseMessage.TOO_EARLY) {
-        super(HttpException.createBody(message, error, ResponseCode.TOO_EARLY), ResponseCode.TOO_EARLY);
+    constructor(message, error = HttpResponseMessage.TOO_EARLY) {
+        super(HttpException.createBody(message, error, HttpResponseCode.TOO_EARLY), HttpResponseCode.TOO_EARLY);
     }
 }
 /**
  * 426 Upgrade Required Exception
  */
 class UpgradeRequiredException extends HttpException {
-    constructor(message, error = ResponseMessage.UPGRADE_REQUIRED) {
-        super(HttpException.createBody(message, error, ResponseCode.UPGRADE_REQUIRED), ResponseCode.UPGRADE_REQUIRED);
+    constructor(message, error = HttpResponseMessage.UPGRADE_REQUIRED) {
+        super(HttpException.createBody(message, error, HttpResponseCode.UPGRADE_REQUIRED), HttpResponseCode.UPGRADE_REQUIRED);
     }
 }
 /**
  * 428 Precondition Required Exception
  */
 class PreconditionRequiredException extends HttpException {
-    constructor(message, error = ResponseMessage.PRECONDITION_REQUIRED) {
-        super(HttpException.createBody(message, error, ResponseCode.PRECONDITION_REQUIRED), ResponseCode.PRECONDITION_REQUIRED);
+    constructor(message, error = HttpResponseMessage.PRECONDITION_REQUIRED) {
+        super(HttpException.createBody(message, error, HttpResponseCode.PRECONDITION_REQUIRED), HttpResponseCode.PRECONDITION_REQUIRED);
     }
 }
 /**
  * 429 Too Many Requests Exception
  */
 class TooManyRequestsException extends HttpException {
-    constructor(message, error = ResponseMessage.TOO_MANY_REQUESTS) {
-        super(HttpException.createBody(message, error, ResponseCode.TOO_MANY_REQUESTS), ResponseCode.TOO_MANY_REQUESTS);
+    constructor(message, error = HttpResponseMessage.TOO_MANY_REQUESTS) {
+        super(HttpException.createBody(message, error, HttpResponseCode.TOO_MANY_REQUESTS), HttpResponseCode.TOO_MANY_REQUESTS);
     }
 }
 /**
  * 431 Request Header Fields Too Large Exception
  */
 class RequestHeaderFieldsTooLargeException extends HttpException {
-    constructor(message, error = ResponseMessage.REQUEST_HEADER_FIELDS_TOO_LARGE) {
-        super(HttpException.createBody(message, error, ResponseCode.REQUEST_HEADER_FIELDS_TOO_LARGE), ResponseCode.REQUEST_HEADER_FIELDS_TOO_LARGE);
+    constructor(message, error = HttpResponseMessage.REQUEST_HEADER_FIELDS_TOO_LARGE) {
+        super(HttpException.createBody(message, error, HttpResponseCode.REQUEST_HEADER_FIELDS_TOO_LARGE), HttpResponseCode.REQUEST_HEADER_FIELDS_TOO_LARGE);
     }
 }
 /**
  * 451 Unavailable For Legal Reasons Exception
  */
 class UnavailableForLegalReasonsException extends HttpException {
-    constructor(message, error = ResponseMessage.UNAVAILABLE_FOR_LEGAL_REASONS) {
-        super(HttpException.createBody(message, error, ResponseCode.UNAVAILABLE_FOR_LEGAL_REASONS), ResponseCode.UNAVAILABLE_FOR_LEGAL_REASONS);
+    constructor(message, error = HttpResponseMessage.UNAVAILABLE_FOR_LEGAL_REASONS) {
+        super(HttpException.createBody(message, error, HttpResponseCode.UNAVAILABLE_FOR_LEGAL_REASONS), HttpResponseCode.UNAVAILABLE_FOR_LEGAL_REASONS);
     }
 }
 /**
  * 500 Internal Server Error Exception
  */
 class InternalServerErrorException extends HttpException {
-    constructor(message, error = ResponseMessage.INTERNAL_SERVER_ERROR) {
-        super(HttpException.createBody(message, error, ResponseCode.INTERNAL_SERVER_ERROR), ResponseCode.INTERNAL_SERVER_ERROR);
+    constructor(message, error = HttpResponseMessage.INTERNAL_SERVER_ERROR) {
+        super(HttpException.createBody(message, error, HttpResponseCode.INTERNAL_SERVER_ERROR), HttpResponseCode.INTERNAL_SERVER_ERROR);
     }
 }
 /**
  * 501 Not Implemented Exception
  */
 class NotImplementedException extends HttpException {
-    constructor(message, error = ResponseMessage.NOT_IMPLEMENTED) {
-        super(HttpException.createBody(message, error, ResponseCode.NOT_IMPLEMENTED), ResponseCode.NOT_IMPLEMENTED);
+    constructor(message, error = HttpResponseMessage.NOT_IMPLEMENTED) {
+        super(HttpException.createBody(message, error, HttpResponseCode.NOT_IMPLEMENTED), HttpResponseCode.NOT_IMPLEMENTED);
     }
 }
 /**
  * 502 Bad Gateway Exception
  */
 class BadGatewayException extends HttpException {
-    constructor(message, error = ResponseMessage.BAD_GATEWAY) {
-        super(HttpException.createBody(message, error, ResponseCode.BAD_GATEWAY), ResponseCode.BAD_GATEWAY);
+    constructor(message, error = HttpResponseMessage.BAD_GATEWAY) {
+        super(HttpException.createBody(message, error, HttpResponseCode.BAD_GATEWAY), HttpResponseCode.BAD_GATEWAY);
     }
 }
 /**
  * 503 Service Unavailable Exception
  */
 class ServiceUnavailableException extends HttpException {
-    constructor(message, error = ResponseMessage.SERVICE_UNAVAILABLE) {
-        super(HttpException.createBody(message, error, ResponseCode.SERVICE_UNAVAILABLE), ResponseCode.SERVICE_UNAVAILABLE);
+    constructor(message, error = HttpResponseMessage.SERVICE_UNAVAILABLE) {
+        super(HttpException.createBody(message, error, HttpResponseCode.SERVICE_UNAVAILABLE), HttpResponseCode.SERVICE_UNAVAILABLE);
     }
 }
 /**
  * 504 Gateway Timeout Exception
  */
 class GatewayTimeoutException extends HttpException {
-    constructor(message, error = ResponseMessage.GATEWAY_TIMEOUT) {
-        super(HttpException.createBody(message, error, ResponseCode.GATEWAY_TIMEOUT), ResponseCode.GATEWAY_TIMEOUT);
+    constructor(message, error = HttpResponseMessage.GATEWAY_TIMEOUT) {
+        super(HttpException.createBody(message, error, HttpResponseCode.GATEWAY_TIMEOUT), HttpResponseCode.GATEWAY_TIMEOUT);
     }
 }
 /**
  * 505 HTTP Version Not Supported Exception
  */
 class HTTPVersionNotSupportedException extends HttpException {
-    constructor(message, error = ResponseMessage.HTTP_VERSION_NOT_SUPPORTED) {
-        super(HttpException.createBody(message, error, ResponseCode.HTTP_VERSION_NOT_SUPPORTED), ResponseCode.HTTP_VERSION_NOT_SUPPORTED);
+    constructor(message, error = HttpResponseMessage.HTTP_VERSION_NOT_SUPPORTED) {
+        super(HttpException.createBody(message, error, HttpResponseCode.HTTP_VERSION_NOT_SUPPORTED), HttpResponseCode.HTTP_VERSION_NOT_SUPPORTED);
     }
 }
 /**
  * 506 Variant Also Negotiates Exception
  */
 class VariantAlsoNegotiatesException extends HttpException {
-    constructor(message, error = ResponseMessage.VARIANT_ALSO_NEGOTIATES) {
-        super(HttpException.createBody(message, error, ResponseCode.VARIANT_ALSO_NEGOTIATES), ResponseCode.VARIANT_ALSO_NEGOTIATES);
+    constructor(message, error = HttpResponseMessage.VARIANT_ALSO_NEGOTIATES) {
+        super(HttpException.createBody(message, error, HttpResponseCode.VARIANT_ALSO_NEGOTIATES), HttpResponseCode.VARIANT_ALSO_NEGOTIATES);
     }
 }
 /**
  * 507 Insufficient Storage Exception
  */
 class InsufficientStorageException extends HttpException {
-    constructor(message, error = ResponseMessage.INSUFFICIENT_STORAGE) {
-        super(HttpException.createBody(message, error, ResponseCode.INSUFFICIENT_STORAGE), ResponseCode.INSUFFICIENT_STORAGE);
+    constructor(message, error = HttpResponseMessage.INSUFFICIENT_STORAGE) {
+        super(HttpException.createBody(message, error, HttpResponseCode.INSUFFICIENT_STORAGE), HttpResponseCode.INSUFFICIENT_STORAGE);
     }
 }
 /**
  * 508 Loop Detected Exception
  */
 class LoopDetectedException extends HttpException {
-    constructor(message, error = ResponseMessage.LOOP_DETECTED) {
-        super(HttpException.createBody(message, error, ResponseCode.LOOP_DETECTED), ResponseCode.LOOP_DETECTED);
+    constructor(message, error = HttpResponseMessage.LOOP_DETECTED) {
+        super(HttpException.createBody(message, error, HttpResponseCode.LOOP_DETECTED), HttpResponseCode.LOOP_DETECTED);
     }
 }
 /**
  * 511 Network Authentication Required Exception
  */
 class NetworkAuthenticationRequiredException extends HttpException {
-    constructor(message, error = ResponseMessage.NETWORK_AUTHENTICATION_REQUIRED) {
-        super(HttpException.createBody(message, error, ResponseCode.NETWORK_AUTHENTICATION_REQUIRED), ResponseCode.NETWORK_AUTHENTICATION_REQUIRED);
+    constructor(message, error = HttpResponseMessage.NETWORK_AUTHENTICATION_REQUIRED) {
+        super(HttpException.createBody(message, error, HttpResponseCode.NETWORK_AUTHENTICATION_REQUIRED), HttpResponseCode.NETWORK_AUTHENTICATION_REQUIRED);
     }
 }
 
-class RequestV1 extends IncomingMessage {
-    /**
-     * Constructor
-     * @param socket
-     * @param routeParams
-     */
-    constructor(socket, routeParams) {
-        super(socket);
-        this.cookieParams = this.parseCookieParams();
-        this.routeParams = routeParams;
-        this.queryParams = this.parseQueryParams();
-    }
-    /**
-     * Parse Cookie string
-     * @param cookies
-     */
-    parseCookieParams(cookies) {
-        const cookiesString = cookies ? cookies : (this.headers || {}).cookie || '';
-        return SetCookieParser.parse(cookiesString.split('; '), {
-            decodeValues: true,
-            map: true,
-        });
-    }
-    /**
-     * Parse url string
-     * @param url
-     */
-    parseQueryParams(url) {
-        const urlString = url ? url : this.url || '';
-        return parse(urlString, true).query;
-    }
-}
-class RequestV2 extends Http2ServerRequest {
-    /**
-     * Constructor
-     * @param stream
-     * @param headers
-     * @param options
-     * @param rawHeaders
-     * @param routeParams
-     */
-    constructor(stream, headers, options, rawHeaders, routeParams) {
-        super(stream, headers, options, rawHeaders);
-        this.cookieParams = this.parseCookieParams();
-        this.routeParams = routeParams;
-        this.queryParams = this.parseQueryParams();
-    }
-    /**
-     * Parse Cookie string
-     * @param cookies
-     */
-    parseCookieParams(cookies) {
-        const cookiesString = cookies ? cookies : (this.headers || {}).cookie || '';
-        return SetCookieParser.parse(cookiesString.split('; '), {
-            decodeValues: true,
-            map: true,
-        });
-    }
-    /**
-     * Parse url string
-     * @param url
-     */
-    parseQueryParams(url) {
-        const urlString = url ? url : this.url || '';
-        return parse(urlString, true).query;
-    }
-}
-
-class MockRequest extends RequestV1 {
+class MockRequest extends HttpRequest {
     constructor(mock, body, routeParams) {
         super(new Socket(), routeParams);
         this.headers = mock.headers;
@@ -899,12 +911,20 @@ class MockRequest extends RequestV1 {
         this.queryParams = this.parseQueryParams();
     }
 }
+class MockResponse extends HttpResponse {
+    constructor(req, mock) {
+        super(req);
+        this.statusCode = mock ? mock.statusCode : HttpResponseCode.OK;
+        this.statusMessage = mock ? mock.statusMessage : HttpResponseMessage.OK;
+        //    this.writableFinished = mock ? mock.writableFinished : true
+    }
+}
 const mockReq = (data, params) => new MockRequest({
     complete: true,
     connection: new Socket(),
     headers: {
-        [RequestHeader.COOKIE.toLowerCase()]: 'test=testValue; test2=testValue2',
-        [RequestHeader.X_FORWARDED_FOR.toLowerCase()]: '8.8.8.8',
+        [HttpRequestHeader.COOKIE.toLowerCase()]: 'test=testValue; test2=testValue2',
+        [HttpRequestHeader.X_FORWARDED_FOR.toLowerCase()]: '8.8.8.8',
         test: 'testValue',
         test2: 'testValue2',
     },
@@ -918,8 +938,8 @@ const mockReqYaml = (data, params) => new MockRequest({
     complete: true,
     connection: new Socket(),
     headers: {
-        [RequestHeader.COOKIE.toLowerCase()]: 'test=testValue; test2=testValue2',
-        [RequestHeader.X_FORWARDED_FOR.toLowerCase()]: '8.8.8.8',
+        [HttpRequestHeader.COOKIE.toLowerCase()]: 'test=testValue; test2=testValue2',
+        [HttpRequestHeader.X_FORWARDED_FOR.toLowerCase()]: '8.8.8.8',
         test: 'testValue',
         test2: 'testValue2',
     },
@@ -929,15 +949,6 @@ const mockReqYaml = (data, params) => new MockRequest({
     method: 'GET',
     url: '/test?test=testValue&test2=testValue2',
 }, YAML.stringify(data), params);
-
-class MockResponse extends ServerResponse {
-    constructor(req, mock) {
-        super(req);
-        this.statusCode = mock ? mock.statusCode : ResponseCode.OK;
-        this.statusMessage = mock ? mock.statusMessage : ResponseMessage.OK;
-        //    this.writableFinished = mock ? mock.writableFinished : true
-    }
-}
 const mockRes = (data) => new MockResponse(mockReq(data));
 
-export { ArgumentSource, BadGatewayException, Body, ConflictException, Cookie, ExpectationFailedException, ForbiddenException, GatewayTimeoutException, GoneException, HTTPVersionNotSupportedException, Header, HttpException, ImateapotException, InsufficientStorageException, InternalServerErrorException, Ip, LengthRequiredException, LoopDetectedException, MethodNotAllowedException, MockRequest, MockResponse, NetworkAuthenticationRequiredException, NotAcceptableException, NotFoundException, NotImplementedException, Param, PayloadTooLargeException, PaymentRequiredException, PreconditionFailedException, PreconditionRequiredException, ProxyAuthenticationRequiredException, Query, RangeNotSatisfiableException, Req, RequestHeader, RequestHeaderFieldsTooLargeException, RequestMethod, RequestTimeoutException, RequestV1, RequestV2, Res, RespondWith, RespondWithJson, RespondWithRaw, RespondWithYaml, ResponseCode, ResponseMessage, ServiceUnavailableException, TooEarlyException, TooManyRequestsException, URITooLongException, UnauthorizedException, UnavailableForLegalReasonsException, UnprocessableEntityException, UnsupportedMediaTypeException, UpgradeRequiredException, VariantAlsoNegotiatesException, Version, methodArgumentsDescriptor, mockReq, mockReqYaml, mockRes };
+export { BadGatewayException, Body, ConflictException, Cookie, ExpectationFailedException, ForbiddenException, GatewayTimeoutException, GoneException, HTTPVersionNotSupportedException, Header, Http2Request, Http2Response, HttpArgumentSource, HttpException, HttpRequest, HttpRequestHeader, HttpRequestMethod, HttpResponse, HttpResponseCode, HttpResponseMessage, ImateapotException, InsufficientStorageException, InternalServerErrorException, Ip, LengthRequiredException, LoopDetectedException, MethodNotAllowedException, MockRequest, MockResponse, NetworkAuthenticationRequiredException, NotAcceptableException, NotFoundException, NotImplementedException, Param, PayloadTooLargeException, PaymentRequiredException, PreconditionFailedException, PreconditionRequiredException, ProxyAuthenticationRequiredException, Query, RangeNotSatisfiableException, Req, RequestHeaderFieldsTooLargeException, RequestTimeoutException, Res, RespondWith, RespondWithJson, RespondWithRaw, RespondWithYaml, ServiceUnavailableException, TooEarlyException, TooManyRequestsException, URITooLongException, UnauthorizedException, UnavailableForLegalReasonsException, UnprocessableEntityException, UnsupportedMediaTypeException, UpgradeRequiredException, VariantAlsoNegotiatesException, methodArgumentsDescriptor, mockReq, mockReqYaml, mockRes };

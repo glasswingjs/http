@@ -1,7 +1,7 @@
 import {ClassMethod, extendClassMethod} from '@glasswing/common'
 import YAML from 'yaml'
 
-import {ResponseBodyEncoder} from '../_types'
+import {HttpResponseBodyEncoder} from '../response'
 
 /**
  * Comment
@@ -9,7 +9,7 @@ import {ResponseBodyEncoder} from '../_types'
  * @returns {MethodDecorator}
  */
 export const RespondWith = (
-  bodyEncoder: ResponseBodyEncoder = (data: any) => data,
+  bodyEncoder: HttpResponseBodyEncoder = (data: any) => data,
   ...other: any[]
 ): MethodDecorator => (
   target: any,

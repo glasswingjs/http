@@ -1,31 +1,82 @@
 /// <reference types="node" />
-import http, { ServerResponse, IncomingMessage } from 'http';
-import http2, { Http2ServerResponse, Http2ServerRequest, ServerHttp2Stream } from 'http2';
-import { Cookie as Cookie$1 } from 'set-cookie-parser';
+import http, { IncomingMessage, ServerResponse } from 'http';
 import { Socket } from 'net';
+import { Cookie as Cookie$1 } from 'set-cookie-parser';
+import { Http2ServerRequest, ServerHttp2Stream, IncomingHttpHeaders, Http2ServerResponse } from 'http2';
 import { ReadableOptions } from 'stream';
 
-/**
- * HTTP Version
- */
-declare enum Version {
-    V1 = "http1",
-    V2 = "http2"
-}
-interface HttpExceptionBody {
-    message?: object | string;
-    error?: string;
-    code?: number;
-}
-declare type Response = ServerResponse | Http2ServerResponse;
 declare type CookieObject = Cookie$1;
-declare type RequestBodyDecoder = (val: string) => any;
-declare type ResponseBodyEncoder = (val: any, ...args: any[]) => any;
+interface IStringTMap<T> {
+    [key: string]: T;
+}
+declare type HttpParams = IStringTMap<any>;
+declare type HttpCookieParams = IStringTMap<CookieObject>;
+interface HttpRequestInterface {
+    parseCookieParams(cookies?: string): HttpCookieParams;
+    parseQueryParams(url?: string): HttpParams;
+    toHttpRequest(): IncomingMessage;
+}
+declare class HttpRequest extends IncomingMessage {
+    cookieParams?: HttpCookieParams;
+    routeParams?: HttpParams;
+    queryParams?: HttpParams;
+    /**
+     * Constructor
+     * @param socket
+     * @param routeParams
+     */
+    constructor(socket: Socket, routeParams?: HttpParams);
+    /**
+     * Parse Cookie string
+     * @param cookies
+     */
+    parseCookieParams(cookies?: string): HttpCookieParams;
+    /**
+     * Parse url string
+     * @param url
+     */
+    parseQueryParams(url?: string): HttpParams;
+    /**
+     *
+     */
+    toHttpRequest(): IncomingMessage;
+}
+
+declare class Http2Request extends Http2ServerRequest {
+    cookieParams?: HttpCookieParams;
+    routeParams?: HttpParams;
+    queryParams?: HttpParams;
+    /**
+     * Constructor
+     * @param stream
+     * @param headers
+     * @param options
+     * @param rawHeaders
+     * @param routeParams
+     */
+    constructor(stream: ServerHttp2Stream, headers: IncomingHttpHeaders, options: ReadableOptions, rawHeaders: string[], routeParams: HttpParams);
+    /**
+     * Parse Cookie string
+     * @param cookies
+     */
+    parseCookieParams(cookies?: string): HttpCookieParams;
+    /**
+     * Parse url string
+     * @param url
+     */
+    parseQueryParams(url?: string): HttpParams;
+    /**
+     *
+     */
+    toHttpRequest(): Http2ServerRequest;
+}
+
+declare type HttpRequestBodyDecoder = (val: string) => any;
 /**
  * List of HTTP headers, as described on MDN Documentation
  * @link https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers
  */
-declare enum RequestHeader {
+declare enum HttpRequestHeader {
     ACCEPT = "Accept",
     ACCEPT_CH = "Accept-CH",
     ACCEPT_CH_LIFETIME = "Accept-CH-Lifetime",
@@ -125,11 +176,146 @@ declare enum RequestHeader {
     X_XSS_PROTECTION = "X-XSS-Protection"
 }
 /**
+ * List of Request Methods as described on MDN Documentation
+ * @link https://developer.mozilla.org/en-US/docs/Web/HTTP/Methods
+ */
+declare enum HttpRequestMethod {
+    ALL = "all",
+    /**
+     * The CONNECT method establishes a tunnel to the server identified by the target  resource.
+     */
+    CONNECT = "connect",
+    /**
+     * The DELETE method deletes the specified resource.
+     */
+    DELETE = "delete",
+    /**
+     * The GET method requests a representation of the specified resource. Requests using GET should only retrieve data.
+     */
+    GET = "get",
+    /**
+     * The HEAD method asks for a response identical to that of a GET request, but without the response body.
+     */
+    HEAD = "head",
+    /**
+     * The OPTIONS method is used to describe the communication options for the target resource.
+     */
+    OPTIONS = "options",
+    /**
+     * The PATCH method is used to apply partial modifications to a resource.
+     */
+    PATCH = "patch",
+    /**
+     * The POST method is used to submit an entity to the specified resource, often causing a change in state or side
+     * effects on the server.
+     */
+    POST = "post",
+    /**
+     * The PUT method replaces all current representations of the target resource with the request payload.
+     */
+    PUT = "put",
+    /**
+     * The TRACE method performs a message loop-back test along the path to the target resource.
+     */
+    TRACE = "trace"
+}
+
+/**
+ * Sources for Http Arguments
+ */
+declare enum HttpArgumentSource {
+    REQUEST = "request",
+    RESPONSE = "response"
+}
+/**
+ * Method definition for extracting argument from Http?Request / Http?Response
+ */
+declare type HttpArgumentExtractor = (entity: any) => any;
+/**
+ * Method definition for extracting argument from Http Body (see POST requests)
+ */
+interface HttpBodyArgumentExtractor extends HttpArgumentExtractor {
+    (req: Request): Promise<any>;
+}
+interface ParameterDescriptor {
+    callable: HttpArgumentExtractor;
+    source: HttpArgumentSource;
+}
+/******************************************************************************
+ *
+ * Helpers
+ *
+ *****************************************************************************/
+/**
+ * @Body(key:? string, decoder?: RequestBodyDecoder)
+ *
+ * If key is not mentioned or `null`, will return the entire decoded body.
+ * If key is mentioned and not null, will return a certain property of the body, defined by the key's value.
+ */
+declare const Body: (key?: string | undefined, decoder?: HttpRequestBodyDecoder) => ParameterDecorator;
+/**
+ * Cookie(key?: string, value?: any)
+ * If key is not mentioned or `null`, will return the entire cookies object.
+ * If key is mentioned and not null, will return a certain property of the cookies object, defined by the key's
+ * value.
+ */
+declare const Cookie: (key?: string | undefined, value?: any) => ParameterDecorator;
+/**
+ * Header(key?: string)
+ * If key is not mentioned or `null`, will return the entire headers object.
+ * If key is mentioned and not null, will return a certain property of the headers object, defined by the key's
+ * value.
+ */
+declare const Header: (key?: string | undefined) => ParameterDecorator;
+/**
+ * @Ip()
+ */
+declare const Ip: () => ParameterDecorator;
+/**
+ * @Param(key:? string)
+ * If key is not mentioned or `null`, will return the entire decoded parameters object.
+ * If key is mentioned and not null, will return a certain property of the parameters object, defined by the key's
+ * value.
+ */
+declare const Param: (key?: string | undefined) => ParameterDecorator;
+/**
+ * @Query(key:? string)
+ * If key is not mentioned or `null`, will return the entire query object.
+ * If key is mentioned and not null, will return a certain property of the query object, defined by the key's value.
+ */
+declare const Query: (key?: string | undefined) => ParameterDecorator;
+/**
+ * @Req()
+ */
+declare const Req: () => ParameterDecorator;
+/**
+ * @Res()
+ */
+declare const Res: () => ParameterDecorator;
+/******************************************************************************
+ *
+ * Helpers
+ *
+ *****************************************************************************/
+/**
+ *
+ * @param methodName
+ */
+declare const methodArgumentsDescriptor: (methodName: string | symbol) => string;
+
+declare class HttpResponse extends ServerResponse {
+}
+
+declare class Http2Response extends Http2ServerResponse {
+}
+
+declare type HttpResponseBodyEncoder = (val: any, ...args: any[]) => any;
+/**
  * List of HTTP Resonse Codes as described on MDN Documentation
  * @link https://developer.mozilla.org/en-US/docs/Web/HTTP/Status
  * @link https://github.com/symfony/http-foundation/blob/master/Response.php
  */
-declare enum ResponseCode {
+declare enum HttpResponseCode {
     CONTINUE = 100,
     SWITCHING_PROTOCOLS = 101,
     PROCESSING = 102,
@@ -198,7 +384,7 @@ declare enum ResponseCode {
  * List of HTTP Resonse Messages as described on MDN Documentation
  * @link https://developer.mozilla.org/en-US/docs/Web/HTTP/Status
  */
-declare enum ResponseMessage {
+declare enum HttpResponseMessage {
     CONTINUE = "100 Continue",
     SWITCHING_PROTOCOLS = "101 Switching Protocols",
     PROCESSING = "102 Processing",
@@ -263,186 +449,13 @@ declare enum ResponseMessage {
     NOT_EXTENDED = "510 Not Extended",
     NETWORK_AUTHENTICATION_REQUIRED = "511 Network Authentication Required"
 }
-/**
- * List of Request Methods as described on MDN Documentation
- * @link https://developer.mozilla.org/en-US/docs/Web/HTTP/Methods
- */
-declare enum RequestMethod {
-    ALL = "all",
-    /**
-     * The CONNECT method establishes a tunnel to the server identified by the target  resource.
-     */
-    CONNECT = "connect",
-    /**
-     * The DELETE method deletes the specified resource.
-     */
-    DELETE = "delete",
-    /**
-     * The GET method requests a representation of the specified resource. Requests using GET should only retrieve data.
-     */
-    GET = "get",
-    /**
-     * The HEAD method asks for a response identical to that of a GET request, but without the response body.
-     */
-    HEAD = "head",
-    /**
-     * The OPTIONS method is used to describe the communication options for the target resource.
-     */
-    OPTIONS = "options",
-    /**
-     * The PATCH method is used to apply partial modifications to a resource.
-     */
-    PATCH = "patch",
-    /**
-     * The POST method is used to submit an entity to the specified resource, often causing a change in state or side
-     * effects on the server.
-     */
-    POST = "post",
-    /**
-     * The PUT method replaces all current representations of the target resource with the request payload.
-     */
-    PUT = "put",
-    /**
-     * The TRACE method performs a message loop-back test along the path to the target resource.
-     */
-    TRACE = "trace"
-}
-
-interface IStringTMap<T> {
-    [key: string]: T;
-}
-declare type HttpParams = IStringTMap<any>;
-declare type HttpCookieParams = IStringTMap<CookieObject>;
-declare class RequestV1 extends IncomingMessage {
-    cookieParams?: HttpCookieParams;
-    routeParams?: HttpParams;
-    queryParams?: HttpParams;
-    /**
-     * Constructor
-     * @param socket
-     * @param routeParams
-     */
-    constructor(socket: Socket, routeParams?: HttpParams);
-    /**
-     * Parse Cookie string
-     * @param cookies
-     */
-    parseCookieParams(cookies?: string): HttpCookieParams;
-    /**
-     * Parse url string
-     * @param url
-     */
-    parseQueryParams(url?: string): HttpParams;
-}
-declare class RequestV2 extends Http2ServerRequest {
-    cookieParams?: HttpCookieParams;
-    routeParams?: HttpParams;
-    queryParams?: HttpParams;
-    /**
-     * Constructor
-     * @param stream
-     * @param headers
-     * @param options
-     * @param rawHeaders
-     * @param routeParams
-     */
-    constructor(stream: ServerHttp2Stream, headers: http2.IncomingHttpHeaders, options: ReadableOptions, rawHeaders: string[], routeParams: HttpParams);
-    /**
-     * Parse Cookie string
-     * @param cookies
-     */
-    parseCookieParams(cookies?: string): HttpCookieParams;
-    /**
-     * Parse url string
-     * @param url
-     */
-    parseQueryParams(url?: string): HttpParams;
-}
-/**
- * HTTP Request Type
- */
-declare type Request<V extends Version = Version.V1> = V extends Version.V1 ? RequestV1 : RequestV2;
-
-declare enum ArgumentSource {
-    REQUEST = "request",
-    RESPONSE = "response"
-}
-declare type ArgumentMapperCallable = (entity: any) => any;
-interface BodyArgumentMapperCallable extends ArgumentMapperCallable {
-    (req: Request): Promise<any>;
-}
-interface ParameterDescriptor {
-    callable: ArgumentMapperCallable;
-    source: ArgumentSource;
-}
-/******************************************************************************
- *
- * Helpers
- *
- *****************************************************************************/
-/**
- * @Body(key:? string, decoder?: RequestBodyDecoder)
- *
- * If key is not mentioned or `null`, will return the entire decoded body.
- * If key is mentioned and not null, will return a certain property of the body, defined by the key's value.
- */
-declare const Body: (key?: string | undefined, decoder?: RequestBodyDecoder) => ParameterDecorator;
-/**
- * Cookie(key?: string, value?: any)
- * If key is not mentioned or `null`, will return the entire cookies object.
- * If key is mentioned and not null, will return a certain property of the cookies object, defined by the key's
- * value.
- */
-declare const Cookie: (key?: string | undefined, value?: any) => ParameterDecorator;
-/**
- * Header(key?: string)
- * If key is not mentioned or `null`, will return the entire headers object.
- * If key is mentioned and not null, will return a certain property of the headers object, defined by the key's
- * value.
- */
-declare const Header: (key?: string | undefined) => ParameterDecorator;
-/**
- * @Ip()
- */
-declare const Ip: () => ParameterDecorator;
-/**
- * @Param(key:? string)
- * If key is not mentioned or `null`, will return the entire decoded parameters object.
- * If key is mentioned and not null, will return a certain property of the parameters object, defined by the key's
- * value.
- */
-declare const Param: (key?: string | undefined) => ParameterDecorator;
-/**
- * @Query(key:? string)
- * If key is not mentioned or `null`, will return the entire query object.
- * If key is mentioned and not null, will return a certain property of the query object, defined by the key's value.
- */
-declare const Query: (key?: string | undefined) => ParameterDecorator;
-/**
- * @Req()
- */
-declare const Req: () => ParameterDecorator;
-/**
- * @Res()
- */
-declare const Res: () => ParameterDecorator;
-/******************************************************************************
- *
- * Helpers
- *
- *****************************************************************************/
-/**
- *
- * @param methodName
- */
-declare const methodArgumentsDescriptor: (methodName: string | symbol) => string;
 
 /**
  * Comment
  *
  * @returns {MethodDecorator}
  */
-declare const RespondWith: (bodyEncoder?: ResponseBodyEncoder, ...other: any[]) => MethodDecorator;
+declare const RespondWith: (bodyEncoder?: HttpResponseBodyEncoder, ...other: any[]) => MethodDecorator;
 /**
  * Wrap controller respond with raw data
  *
@@ -462,6 +475,11 @@ declare const RespondWithJson: (...args: any[]) => MethodDecorator;
  */
 declare const RespondWithYaml: (...args: any[]) => MethodDecorator;
 
+interface HttpExceptionBody {
+    message?: object | string;
+    error?: string;
+    code?: number;
+}
 /**
  * @link https://github.com/nestjs/nest/blob/master/packages/common/exceptions/http.exception.ts
  */
@@ -703,24 +721,18 @@ interface MockRequestOptions {
     method?: string;
     url?: string;
 }
-declare class MockRequest extends RequestV1 {
-    constructor(mock: MockRequestOptions, body?: string, routeParams?: HttpParams);
-}
-declare const mockReq: (data: object, params?: object | undefined) => RequestV1;
-declare const mockReqYaml: (data: object, params?: object | undefined) => RequestV1;
-
 interface MockResponseOptions {
     statusCode: number;
     statusMessage: string;
 }
-declare class MockResponse extends ServerResponse {
-    constructor(req: IncomingMessage, mock?: MockResponseOptions);
+declare class MockRequest extends HttpRequest {
+    constructor(mock: MockRequestOptions, body?: string, routeParams?: HttpParams);
 }
-declare const mockRes: (data: object) => Response;
+declare class MockResponse extends HttpResponse {
+    constructor(req: HttpRequest, mock?: MockResponseOptions);
+}
+declare const mockReq: (data: object, params?: object | undefined) => HttpRequest;
+declare const mockReqYaml: (data: object, params?: object | undefined) => HttpRequest;
+declare const mockRes: (data: object) => HttpResponse;
 
-/**
- * Request Handler Type
- */
-declare type RequestHandler = (req: Request, res: Response, params: any) => void;
-
-export { ArgumentMapperCallable, ArgumentSource, BadGatewayException, Body, BodyArgumentMapperCallable, ConflictException, Cookie, CookieObject, ExpectationFailedException, ForbiddenException, GatewayTimeoutException, GoneException, HTTPVersionNotSupportedException, Header, HttpCookieParams, HttpException, HttpExceptionBody, HttpParams, ImateapotException, InsufficientStorageException, InternalServerErrorException, Ip, LengthRequiredException, LoopDetectedException, MethodNotAllowedException, MockRequest, MockRequestOptions, MockResponse, MockResponseOptions, NetworkAuthenticationRequiredException, NotAcceptableException, NotFoundException, NotImplementedException, Param, ParameterDescriptor, PayloadTooLargeException, PaymentRequiredException, PreconditionFailedException, PreconditionRequiredException, ProxyAuthenticationRequiredException, Query, RangeNotSatisfiableException, Req, Request, RequestBodyDecoder, RequestHandler, RequestHeader, RequestHeaderFieldsTooLargeException, RequestMethod, RequestTimeoutException, RequestV1, RequestV2, Res, RespondWith, RespondWithJson, RespondWithRaw, RespondWithYaml, Response, ResponseBodyEncoder, ResponseCode, ResponseMessage, ServiceUnavailableException, TooEarlyException, TooManyRequestsException, URITooLongException, UnauthorizedException, UnavailableForLegalReasonsException, UnprocessableEntityException, UnsupportedMediaTypeException, UpgradeRequiredException, VariantAlsoNegotiatesException, Version, methodArgumentsDescriptor, mockReq, mockReqYaml, mockRes };
+export { BadGatewayException, Body, ConflictException, Cookie, CookieObject, ExpectationFailedException, ForbiddenException, GatewayTimeoutException, GoneException, HTTPVersionNotSupportedException, Header, Http2Request, Http2Response, HttpArgumentExtractor, HttpArgumentSource, HttpBodyArgumentExtractor, HttpCookieParams, HttpException, HttpExceptionBody, HttpParams, HttpRequest, HttpRequestBodyDecoder, HttpRequestHeader, HttpRequestInterface, HttpRequestMethod, HttpResponse, HttpResponseBodyEncoder, HttpResponseCode, HttpResponseMessage, ImateapotException, InsufficientStorageException, InternalServerErrorException, Ip, LengthRequiredException, LoopDetectedException, MethodNotAllowedException, MockRequest, MockRequestOptions, MockResponse, MockResponseOptions, NetworkAuthenticationRequiredException, NotAcceptableException, NotFoundException, NotImplementedException, Param, ParameterDescriptor, PayloadTooLargeException, PaymentRequiredException, PreconditionFailedException, PreconditionRequiredException, ProxyAuthenticationRequiredException, Query, RangeNotSatisfiableException, Req, RequestHeaderFieldsTooLargeException, RequestTimeoutException, Res, RespondWith, RespondWithJson, RespondWithRaw, RespondWithYaml, ServiceUnavailableException, TooEarlyException, TooManyRequestsException, URITooLongException, UnauthorizedException, UnavailableForLegalReasonsException, UnprocessableEntityException, UnsupportedMediaTypeException, UpgradeRequiredException, VariantAlsoNegotiatesException, methodArgumentsDescriptor, mockReq, mockReqYaml, mockRes };

@@ -1,4 +1,10 @@
-import {HttpExceptionBody, ResponseCode, ResponseMessage} from './_types'
+import {HttpResponseCode, HttpResponseMessage} from './response'
+
+export interface HttpExceptionBody {
+  message?: object | string
+  error?: string
+  code?: number
+}
 
 /**
  * @link https://github.com/nestjs/nest/blob/master/packages/common/exceptions/http.exception.ts
@@ -47,8 +53,8 @@ export class HttpException extends Error {
  * 401 Unauthorized Exception
  */
 export class UnauthorizedException extends HttpException {
-  constructor(message: string | object, error: string = ResponseMessage.UNAUTHORIZED) {
-    super(HttpException.createBody(message, error, ResponseCode.UNAUTHORIZED), ResponseCode.UNAUTHORIZED)
+  constructor(message: string | object, error: string = HttpResponseMessage.UNAUTHORIZED) {
+    super(HttpException.createBody(message, error, HttpResponseCode.UNAUTHORIZED), HttpResponseCode.UNAUTHORIZED)
   }
 }
 
@@ -56,8 +62,11 @@ export class UnauthorizedException extends HttpException {
  * 402 Payment Required Exception
  */
 export class PaymentRequiredException extends HttpException {
-  constructor(message: string | object, error: string = ResponseMessage.PAYMENT_REQUIRED) {
-    super(HttpException.createBody(message, error, ResponseCode.PAYMENT_REQUIRED), ResponseCode.PAYMENT_REQUIRED)
+  constructor(message: string | object, error: string = HttpResponseMessage.PAYMENT_REQUIRED) {
+    super(
+      HttpException.createBody(message, error, HttpResponseCode.PAYMENT_REQUIRED),
+      HttpResponseCode.PAYMENT_REQUIRED,
+    )
   }
 }
 
@@ -65,8 +74,8 @@ export class PaymentRequiredException extends HttpException {
  * 403 Forbidden Exception
  */
 export class ForbiddenException extends HttpException {
-  constructor(message: string | object, error: string = ResponseMessage.FORBIDDEN) {
-    super(HttpException.createBody(message, error, ResponseCode.FORBIDDEN), ResponseCode.FORBIDDEN)
+  constructor(message: string | object, error: string = HttpResponseMessage.FORBIDDEN) {
+    super(HttpException.createBody(message, error, HttpResponseCode.FORBIDDEN), HttpResponseCode.FORBIDDEN)
   }
 }
 
@@ -74,8 +83,8 @@ export class ForbiddenException extends HttpException {
  * 404 Not Found Exception
  */
 export class NotFoundException extends HttpException {
-  constructor(message: string | object, error: string = ResponseMessage.NOT_FOUND) {
-    super(HttpException.createBody(message, error, ResponseCode.NOT_FOUND), ResponseCode.NOT_FOUND)
+  constructor(message: string | object, error: string = HttpResponseMessage.NOT_FOUND) {
+    super(HttpException.createBody(message, error, HttpResponseCode.NOT_FOUND), HttpResponseCode.NOT_FOUND)
   }
 }
 
@@ -83,8 +92,11 @@ export class NotFoundException extends HttpException {
  * 405 Method Not Allowed Exception
  */
 export class MethodNotAllowedException extends HttpException {
-  constructor(message: string | object, error: string = ResponseMessage.METHOD_NOT_ALLOWED) {
-    super(HttpException.createBody(message, error, ResponseCode.METHOD_NOT_ALLOWED), ResponseCode.METHOD_NOT_ALLOWED)
+  constructor(message: string | object, error: string = HttpResponseMessage.METHOD_NOT_ALLOWED) {
+    super(
+      HttpException.createBody(message, error, HttpResponseCode.METHOD_NOT_ALLOWED),
+      HttpResponseCode.METHOD_NOT_ALLOWED,
+    )
   }
 }
 
@@ -92,8 +104,8 @@ export class MethodNotAllowedException extends HttpException {
  * 406 Not Acceptable Exception
  */
 export class NotAcceptableException extends HttpException {
-  constructor(message: string | object, error: string = ResponseMessage.NOT_ACCEPTABLE) {
-    super(HttpException.createBody(message, error, ResponseCode.NOT_ACCEPTABLE), ResponseCode.NOT_ACCEPTABLE)
+  constructor(message: string | object, error: string = HttpResponseMessage.NOT_ACCEPTABLE) {
+    super(HttpException.createBody(message, error, HttpResponseCode.NOT_ACCEPTABLE), HttpResponseCode.NOT_ACCEPTABLE)
   }
 }
 
@@ -101,10 +113,10 @@ export class NotAcceptableException extends HttpException {
  * 407 Proxy Authentication Required Exception
  */
 export class ProxyAuthenticationRequiredException extends HttpException {
-  constructor(message: string | object, error: string = ResponseMessage.PROXY_AUTHENTICATION_REQUIRED) {
+  constructor(message: string | object, error: string = HttpResponseMessage.PROXY_AUTHENTICATION_REQUIRED) {
     super(
-      HttpException.createBody(message, error, ResponseCode.PROXY_AUTHENTICATION_REQUIRED),
-      ResponseCode.PROXY_AUTHENTICATION_REQUIRED,
+      HttpException.createBody(message, error, HttpResponseCode.PROXY_AUTHENTICATION_REQUIRED),
+      HttpResponseCode.PROXY_AUTHENTICATION_REQUIRED,
     )
   }
 }
@@ -113,8 +125,8 @@ export class ProxyAuthenticationRequiredException extends HttpException {
  * 408 Request Timeout Exception
  */
 export class RequestTimeoutException extends HttpException {
-  constructor(message: string | object, error: string = ResponseMessage.REQUEST_TIMEOUT) {
-    super(HttpException.createBody(message, error, ResponseCode.REQUEST_TIMEOUT), ResponseCode.REQUEST_TIMEOUT)
+  constructor(message: string | object, error: string = HttpResponseMessage.REQUEST_TIMEOUT) {
+    super(HttpException.createBody(message, error, HttpResponseCode.REQUEST_TIMEOUT), HttpResponseCode.REQUEST_TIMEOUT)
   }
 }
 
@@ -122,8 +134,8 @@ export class RequestTimeoutException extends HttpException {
  * 409 Conflict Exception
  */
 export class ConflictException extends HttpException {
-  constructor(message: string | object, error: string = ResponseMessage.CONFLICT) {
-    super(HttpException.createBody(message, error, ResponseCode.CONFLICT), ResponseCode.CONFLICT)
+  constructor(message: string | object, error: string = HttpResponseMessage.CONFLICT) {
+    super(HttpException.createBody(message, error, HttpResponseCode.CONFLICT), HttpResponseCode.CONFLICT)
   }
 }
 
@@ -131,8 +143,8 @@ export class ConflictException extends HttpException {
  * 410 Gone Exception
  */
 export class GoneException extends HttpException {
-  constructor(message: string | object, error: string = ResponseMessage.GONE) {
-    super(HttpException.createBody(message, error, ResponseCode.GONE), ResponseCode.GONE)
+  constructor(message: string | object, error: string = HttpResponseMessage.GONE) {
+    super(HttpException.createBody(message, error, HttpResponseCode.GONE), HttpResponseCode.GONE)
   }
 }
 
@@ -140,8 +152,8 @@ export class GoneException extends HttpException {
  * 411 Length Required Exception
  */
 export class LengthRequiredException extends HttpException {
-  constructor(message: string | object, error: string = ResponseMessage.LENGTH_REQUIRED) {
-    super(HttpException.createBody(message, error, ResponseCode.LENGTH_REQUIRED), ResponseCode.LENGTH_REQUIRED)
+  constructor(message: string | object, error: string = HttpResponseMessage.LENGTH_REQUIRED) {
+    super(HttpException.createBody(message, error, HttpResponseCode.LENGTH_REQUIRED), HttpResponseCode.LENGTH_REQUIRED)
   }
 }
 
@@ -149,8 +161,11 @@ export class LengthRequiredException extends HttpException {
  * 412 Precondition Failed Exception
  */
 export class PreconditionFailedException extends HttpException {
-  constructor(message: string | object, error: string = ResponseMessage.PRECONDITION_FAILED) {
-    super(HttpException.createBody(message, error, ResponseCode.PRECONDITION_FAILED), ResponseCode.PRECONDITION_FAILED)
+  constructor(message: string | object, error: string = HttpResponseMessage.PRECONDITION_FAILED) {
+    super(
+      HttpException.createBody(message, error, HttpResponseCode.PRECONDITION_FAILED),
+      HttpResponseCode.PRECONDITION_FAILED,
+    )
   }
 }
 
@@ -158,8 +173,11 @@ export class PreconditionFailedException extends HttpException {
  * 413 Payload Too Large Exception
  */
 export class PayloadTooLargeException extends HttpException {
-  constructor(message: string | object, error: string = ResponseMessage.PAYLOAD_TOO_LARGE) {
-    super(HttpException.createBody(message, error, ResponseCode.PAYLOAD_TOO_LARGE), ResponseCode.PAYLOAD_TOO_LARGE)
+  constructor(message: string | object, error: string = HttpResponseMessage.PAYLOAD_TOO_LARGE) {
+    super(
+      HttpException.createBody(message, error, HttpResponseCode.PAYLOAD_TOO_LARGE),
+      HttpResponseCode.PAYLOAD_TOO_LARGE,
+    )
   }
 }
 
@@ -167,8 +185,8 @@ export class PayloadTooLargeException extends HttpException {
  * 414 URI Too Long Exception
  */
 export class URITooLongException extends HttpException {
-  constructor(message: string | object, error: string = ResponseMessage.URI_TOO_LONG) {
-    super(HttpException.createBody(message, error, ResponseCode.URI_TOO_LONG), ResponseCode.URI_TOO_LONG)
+  constructor(message: string | object, error: string = HttpResponseMessage.URI_TOO_LONG) {
+    super(HttpException.createBody(message, error, HttpResponseCode.URI_TOO_LONG), HttpResponseCode.URI_TOO_LONG)
   }
 }
 
@@ -176,10 +194,10 @@ export class URITooLongException extends HttpException {
  * 415 Unsupported Media Type Exception
  */
 export class UnsupportedMediaTypeException extends HttpException {
-  constructor(message: string | object, error: string = ResponseMessage.UNSUPPORTED_MEDIA_TYPE) {
+  constructor(message: string | object, error: string = HttpResponseMessage.UNSUPPORTED_MEDIA_TYPE) {
     super(
-      HttpException.createBody(message, error, ResponseCode.UNSUPPORTED_MEDIA_TYPE),
-      ResponseCode.UNSUPPORTED_MEDIA_TYPE,
+      HttpException.createBody(message, error, HttpResponseCode.UNSUPPORTED_MEDIA_TYPE),
+      HttpResponseCode.UNSUPPORTED_MEDIA_TYPE,
     )
   }
 }
@@ -188,10 +206,10 @@ export class UnsupportedMediaTypeException extends HttpException {
  * 416 Range Not Satisfiable Exception
  */
 export class RangeNotSatisfiableException extends HttpException {
-  constructor(message: string | object, error: string = ResponseMessage.RANGE_NOT_SATISFIABLE) {
+  constructor(message: string | object, error: string = HttpResponseMessage.RANGE_NOT_SATISFIABLE) {
     super(
-      HttpException.createBody(message, error, ResponseCode.RANGE_NOT_SATISFIABLE),
-      ResponseCode.RANGE_NOT_SATISFIABLE,
+      HttpException.createBody(message, error, HttpResponseCode.RANGE_NOT_SATISFIABLE),
+      HttpResponseCode.RANGE_NOT_SATISFIABLE,
     )
   }
 }
@@ -200,8 +218,11 @@ export class RangeNotSatisfiableException extends HttpException {
  * 417 Expectation Failed Exception
  */
 export class ExpectationFailedException extends HttpException {
-  constructor(message: string | object, error: string = ResponseMessage.EXPECTATION_FAILED) {
-    super(HttpException.createBody(message, error, ResponseCode.EXPECTATION_FAILED), ResponseCode.EXPECTATION_FAILED)
+  constructor(message: string | object, error: string = HttpResponseMessage.EXPECTATION_FAILED) {
+    super(
+      HttpException.createBody(message, error, HttpResponseCode.EXPECTATION_FAILED),
+      HttpResponseCode.EXPECTATION_FAILED,
+    )
   }
 }
 
@@ -209,8 +230,8 @@ export class ExpectationFailedException extends HttpException {
  * 418 I'm a teapot Exception
  */
 export class ImateapotException extends HttpException {
-  constructor(message: string | object, error: string = ResponseMessage.I_AM_A_TEAPOT) {
-    super(HttpException.createBody(message, error, ResponseCode.I_AM_A_TEAPOT), ResponseCode.I_AM_A_TEAPOT)
+  constructor(message: string | object, error: string = HttpResponseMessage.I_AM_A_TEAPOT) {
+    super(HttpException.createBody(message, error, HttpResponseCode.I_AM_A_TEAPOT), HttpResponseCode.I_AM_A_TEAPOT)
   }
 }
 
@@ -218,10 +239,10 @@ export class ImateapotException extends HttpException {
  * 422 Unprocessable Entity Exception
  */
 export class UnprocessableEntityException extends HttpException {
-  constructor(message: string | object, error: string = ResponseMessage.UNPROCESSABLE_ENTITY) {
+  constructor(message: string | object, error: string = HttpResponseMessage.UNPROCESSABLE_ENTITY) {
     super(
-      HttpException.createBody(message, error, ResponseCode.UNPROCESSABLE_ENTITY),
-      ResponseCode.UNPROCESSABLE_ENTITY,
+      HttpException.createBody(message, error, HttpResponseCode.UNPROCESSABLE_ENTITY),
+      HttpResponseCode.UNPROCESSABLE_ENTITY,
     )
   }
 }
@@ -230,8 +251,8 @@ export class UnprocessableEntityException extends HttpException {
  * 425 Too Early Exception
  */
 export class TooEarlyException extends HttpException {
-  constructor(message: string | object, error: string = ResponseMessage.TOO_EARLY) {
-    super(HttpException.createBody(message, error, ResponseCode.TOO_EARLY), ResponseCode.TOO_EARLY)
+  constructor(message: string | object, error: string = HttpResponseMessage.TOO_EARLY) {
+    super(HttpException.createBody(message, error, HttpResponseCode.TOO_EARLY), HttpResponseCode.TOO_EARLY)
   }
 }
 
@@ -239,8 +260,11 @@ export class TooEarlyException extends HttpException {
  * 426 Upgrade Required Exception
  */
 export class UpgradeRequiredException extends HttpException {
-  constructor(message: string | object, error: string = ResponseMessage.UPGRADE_REQUIRED) {
-    super(HttpException.createBody(message, error, ResponseCode.UPGRADE_REQUIRED), ResponseCode.UPGRADE_REQUIRED)
+  constructor(message: string | object, error: string = HttpResponseMessage.UPGRADE_REQUIRED) {
+    super(
+      HttpException.createBody(message, error, HttpResponseCode.UPGRADE_REQUIRED),
+      HttpResponseCode.UPGRADE_REQUIRED,
+    )
   }
 }
 
@@ -248,10 +272,10 @@ export class UpgradeRequiredException extends HttpException {
  * 428 Precondition Required Exception
  */
 export class PreconditionRequiredException extends HttpException {
-  constructor(message: string | object, error: string = ResponseMessage.PRECONDITION_REQUIRED) {
+  constructor(message: string | object, error: string = HttpResponseMessage.PRECONDITION_REQUIRED) {
     super(
-      HttpException.createBody(message, error, ResponseCode.PRECONDITION_REQUIRED),
-      ResponseCode.PRECONDITION_REQUIRED,
+      HttpException.createBody(message, error, HttpResponseCode.PRECONDITION_REQUIRED),
+      HttpResponseCode.PRECONDITION_REQUIRED,
     )
   }
 }
@@ -260,8 +284,11 @@ export class PreconditionRequiredException extends HttpException {
  * 429 Too Many Requests Exception
  */
 export class TooManyRequestsException extends HttpException {
-  constructor(message: string | object, error: string = ResponseMessage.TOO_MANY_REQUESTS) {
-    super(HttpException.createBody(message, error, ResponseCode.TOO_MANY_REQUESTS), ResponseCode.TOO_MANY_REQUESTS)
+  constructor(message: string | object, error: string = HttpResponseMessage.TOO_MANY_REQUESTS) {
+    super(
+      HttpException.createBody(message, error, HttpResponseCode.TOO_MANY_REQUESTS),
+      HttpResponseCode.TOO_MANY_REQUESTS,
+    )
   }
 }
 
@@ -269,10 +296,10 @@ export class TooManyRequestsException extends HttpException {
  * 431 Request Header Fields Too Large Exception
  */
 export class RequestHeaderFieldsTooLargeException extends HttpException {
-  constructor(message: string | object, error: string = ResponseMessage.REQUEST_HEADER_FIELDS_TOO_LARGE) {
+  constructor(message: string | object, error: string = HttpResponseMessage.REQUEST_HEADER_FIELDS_TOO_LARGE) {
     super(
-      HttpException.createBody(message, error, ResponseCode.REQUEST_HEADER_FIELDS_TOO_LARGE),
-      ResponseCode.REQUEST_HEADER_FIELDS_TOO_LARGE,
+      HttpException.createBody(message, error, HttpResponseCode.REQUEST_HEADER_FIELDS_TOO_LARGE),
+      HttpResponseCode.REQUEST_HEADER_FIELDS_TOO_LARGE,
     )
   }
 }
@@ -281,10 +308,10 @@ export class RequestHeaderFieldsTooLargeException extends HttpException {
  * 451 Unavailable For Legal Reasons Exception
  */
 export class UnavailableForLegalReasonsException extends HttpException {
-  constructor(message: string | object, error: string = ResponseMessage.UNAVAILABLE_FOR_LEGAL_REASONS) {
+  constructor(message: string | object, error: string = HttpResponseMessage.UNAVAILABLE_FOR_LEGAL_REASONS) {
     super(
-      HttpException.createBody(message, error, ResponseCode.UNAVAILABLE_FOR_LEGAL_REASONS),
-      ResponseCode.UNAVAILABLE_FOR_LEGAL_REASONS,
+      HttpException.createBody(message, error, HttpResponseCode.UNAVAILABLE_FOR_LEGAL_REASONS),
+      HttpResponseCode.UNAVAILABLE_FOR_LEGAL_REASONS,
     )
   }
 }
@@ -293,10 +320,10 @@ export class UnavailableForLegalReasonsException extends HttpException {
  * 500 Internal Server Error Exception
  */
 export class InternalServerErrorException extends HttpException {
-  constructor(message: string | object, error: string = ResponseMessage.INTERNAL_SERVER_ERROR) {
+  constructor(message: string | object, error: string = HttpResponseMessage.INTERNAL_SERVER_ERROR) {
     super(
-      HttpException.createBody(message, error, ResponseCode.INTERNAL_SERVER_ERROR),
-      ResponseCode.INTERNAL_SERVER_ERROR,
+      HttpException.createBody(message, error, HttpResponseCode.INTERNAL_SERVER_ERROR),
+      HttpResponseCode.INTERNAL_SERVER_ERROR,
     )
   }
 }
@@ -305,8 +332,8 @@ export class InternalServerErrorException extends HttpException {
  * 501 Not Implemented Exception
  */
 export class NotImplementedException extends HttpException {
-  constructor(message: string | object, error: string = ResponseMessage.NOT_IMPLEMENTED) {
-    super(HttpException.createBody(message, error, ResponseCode.NOT_IMPLEMENTED), ResponseCode.NOT_IMPLEMENTED)
+  constructor(message: string | object, error: string = HttpResponseMessage.NOT_IMPLEMENTED) {
+    super(HttpException.createBody(message, error, HttpResponseCode.NOT_IMPLEMENTED), HttpResponseCode.NOT_IMPLEMENTED)
   }
 }
 
@@ -314,8 +341,8 @@ export class NotImplementedException extends HttpException {
  * 502 Bad Gateway Exception
  */
 export class BadGatewayException extends HttpException {
-  constructor(message: string | object, error: string = ResponseMessage.BAD_GATEWAY) {
-    super(HttpException.createBody(message, error, ResponseCode.BAD_GATEWAY), ResponseCode.BAD_GATEWAY)
+  constructor(message: string | object, error: string = HttpResponseMessage.BAD_GATEWAY) {
+    super(HttpException.createBody(message, error, HttpResponseCode.BAD_GATEWAY), HttpResponseCode.BAD_GATEWAY)
   }
 }
 
@@ -323,8 +350,11 @@ export class BadGatewayException extends HttpException {
  * 503 Service Unavailable Exception
  */
 export class ServiceUnavailableException extends HttpException {
-  constructor(message: string | object, error: string = ResponseMessage.SERVICE_UNAVAILABLE) {
-    super(HttpException.createBody(message, error, ResponseCode.SERVICE_UNAVAILABLE), ResponseCode.SERVICE_UNAVAILABLE)
+  constructor(message: string | object, error: string = HttpResponseMessage.SERVICE_UNAVAILABLE) {
+    super(
+      HttpException.createBody(message, error, HttpResponseCode.SERVICE_UNAVAILABLE),
+      HttpResponseCode.SERVICE_UNAVAILABLE,
+    )
   }
 }
 
@@ -332,8 +362,8 @@ export class ServiceUnavailableException extends HttpException {
  * 504 Gateway Timeout Exception
  */
 export class GatewayTimeoutException extends HttpException {
-  constructor(message: string | object, error: string = ResponseMessage.GATEWAY_TIMEOUT) {
-    super(HttpException.createBody(message, error, ResponseCode.GATEWAY_TIMEOUT), ResponseCode.GATEWAY_TIMEOUT)
+  constructor(message: string | object, error: string = HttpResponseMessage.GATEWAY_TIMEOUT) {
+    super(HttpException.createBody(message, error, HttpResponseCode.GATEWAY_TIMEOUT), HttpResponseCode.GATEWAY_TIMEOUT)
   }
 }
 
@@ -341,10 +371,10 @@ export class GatewayTimeoutException extends HttpException {
  * 505 HTTP Version Not Supported Exception
  */
 export class HTTPVersionNotSupportedException extends HttpException {
-  constructor(message: string | object, error: string = ResponseMessage.HTTP_VERSION_NOT_SUPPORTED) {
+  constructor(message: string | object, error: string = HttpResponseMessage.HTTP_VERSION_NOT_SUPPORTED) {
     super(
-      HttpException.createBody(message, error, ResponseCode.HTTP_VERSION_NOT_SUPPORTED),
-      ResponseCode.HTTP_VERSION_NOT_SUPPORTED,
+      HttpException.createBody(message, error, HttpResponseCode.HTTP_VERSION_NOT_SUPPORTED),
+      HttpResponseCode.HTTP_VERSION_NOT_SUPPORTED,
     )
   }
 }
@@ -353,10 +383,10 @@ export class HTTPVersionNotSupportedException extends HttpException {
  * 506 Variant Also Negotiates Exception
  */
 export class VariantAlsoNegotiatesException extends HttpException {
-  constructor(message: string | object, error: string = ResponseMessage.VARIANT_ALSO_NEGOTIATES) {
+  constructor(message: string | object, error: string = HttpResponseMessage.VARIANT_ALSO_NEGOTIATES) {
     super(
-      HttpException.createBody(message, error, ResponseCode.VARIANT_ALSO_NEGOTIATES),
-      ResponseCode.VARIANT_ALSO_NEGOTIATES,
+      HttpException.createBody(message, error, HttpResponseCode.VARIANT_ALSO_NEGOTIATES),
+      HttpResponseCode.VARIANT_ALSO_NEGOTIATES,
     )
   }
 }
@@ -365,10 +395,10 @@ export class VariantAlsoNegotiatesException extends HttpException {
  * 507 Insufficient Storage Exception
  */
 export class InsufficientStorageException extends HttpException {
-  constructor(message: string | object, error: string = ResponseMessage.INSUFFICIENT_STORAGE) {
+  constructor(message: string | object, error: string = HttpResponseMessage.INSUFFICIENT_STORAGE) {
     super(
-      HttpException.createBody(message, error, ResponseCode.INSUFFICIENT_STORAGE),
-      ResponseCode.INSUFFICIENT_STORAGE,
+      HttpException.createBody(message, error, HttpResponseCode.INSUFFICIENT_STORAGE),
+      HttpResponseCode.INSUFFICIENT_STORAGE,
     )
   }
 }
@@ -377,8 +407,8 @@ export class InsufficientStorageException extends HttpException {
  * 508 Loop Detected Exception
  */
 export class LoopDetectedException extends HttpException {
-  constructor(message: string | object, error: string = ResponseMessage.LOOP_DETECTED) {
-    super(HttpException.createBody(message, error, ResponseCode.LOOP_DETECTED), ResponseCode.LOOP_DETECTED)
+  constructor(message: string | object, error: string = HttpResponseMessage.LOOP_DETECTED) {
+    super(HttpException.createBody(message, error, HttpResponseCode.LOOP_DETECTED), HttpResponseCode.LOOP_DETECTED)
   }
 }
 
@@ -386,10 +416,10 @@ export class LoopDetectedException extends HttpException {
  * 511 Network Authentication Required Exception
  */
 export class NetworkAuthenticationRequiredException extends HttpException {
-  constructor(message: string | object, error: string = ResponseMessage.NETWORK_AUTHENTICATION_REQUIRED) {
+  constructor(message: string | object, error: string = HttpResponseMessage.NETWORK_AUTHENTICATION_REQUIRED) {
     super(
-      HttpException.createBody(message, error, ResponseCode.NETWORK_AUTHENTICATION_REQUIRED),
-      ResponseCode.NETWORK_AUTHENTICATION_REQUIRED,
+      HttpException.createBody(message, error, HttpResponseCode.NETWORK_AUTHENTICATION_REQUIRED),
+      HttpResponseCode.NETWORK_AUTHENTICATION_REQUIRED,
     )
   }
 }
