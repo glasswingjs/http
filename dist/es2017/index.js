@@ -20,6 +20,18 @@ class HttpRequest extends IncomingMessage {
         this.queryParams = this.parseQueryParams();
     }
     /**
+     *
+     * @param im
+     * @param routeParams
+     */
+    static fromIncommingMessage(im, routeParams) {
+        const request = im;
+        request.cookieParams = request.parseCookieParams();
+        request.routeParams = routeParams;
+        request.queryParams = request.parseQueryParams();
+        return request;
+    }
+    /**
      * Parse Cookie string
      * @param cookies
      */
@@ -60,6 +72,18 @@ class Http2Request extends Http2ServerRequest {
         this.cookieParams = this.parseCookieParams();
         this.routeParams = routeParams;
         this.queryParams = this.parseQueryParams();
+    }
+    /**
+     *
+     * @param im
+     * @param routeParams
+     */
+    static fromIncommingMessage(im, routeParams) {
+        const request = im;
+        request.cookieParams = request.parseCookieParams();
+        request.routeParams = routeParams;
+        request.queryParams = request.parseQueryParams();
+        return request;
     }
     /**
      * Parse Cookie string

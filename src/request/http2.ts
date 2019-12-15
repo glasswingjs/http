@@ -6,6 +6,19 @@ import {parse} from 'url'
 import {HttpCookieParams, HttpParams} from './http'
 
 export class Http2Request extends http2.Http2ServerRequest {
+  /**
+   *
+   * @param im
+   * @param routeParams
+   */
+  public static fromIncommingMessage(im: http2.Http2ServerRequest, routeParams?: HttpParams): Http2Request {
+    const request = im as Http2Request
+    request.cookieParams = request.parseCookieParams()
+    request.routeParams = routeParams
+    request.queryParams = request.parseQueryParams()
+    return request
+  }
+
   public cookieParams?: HttpCookieParams
   public routeParams?: HttpParams
   public queryParams?: HttpParams

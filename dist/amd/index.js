@@ -92,6 +92,18 @@ define('index', ['exports', 'reflect-metadata', 'http', 'set-cookie-parser', 'ur
             return _this;
         }
         /**
+         *
+         * @param im
+         * @param routeParams
+         */
+        HttpRequest.fromIncommingMessage = function (im, routeParams) {
+            var request = im;
+            request.cookieParams = request.parseCookieParams();
+            request.routeParams = routeParams;
+            request.queryParams = request.parseQueryParams();
+            return request;
+        };
+        /**
          * Parse Cookie string
          * @param cookies
          */
@@ -136,6 +148,18 @@ define('index', ['exports', 'reflect-metadata', 'http', 'set-cookie-parser', 'ur
             _this.queryParams = _this.parseQueryParams();
             return _this;
         }
+        /**
+         *
+         * @param im
+         * @param routeParams
+         */
+        Http2Request.fromIncommingMessage = function (im, routeParams) {
+            var request = im;
+            request.cookieParams = request.parseCookieParams();
+            request.routeParams = routeParams;
+            request.queryParams = request.parseQueryParams();
+            return request;
+        };
         /**
          * Parse Cookie string
          * @param cookies

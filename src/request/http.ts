@@ -20,6 +20,19 @@ export interface HttpRequestInterface {
 }
 
 export class HttpRequest extends http.IncomingMessage {
+  /**
+   *
+   * @param im
+   * @param routeParams
+   */
+  public static fromIncommingMessage(im: http.IncomingMessage, routeParams?: HttpParams): HttpRequest {
+    const request = im as HttpRequest
+    request.cookieParams = request.parseCookieParams()
+    request.routeParams = routeParams
+    request.queryParams = request.parseQueryParams()
+    return request
+  }
+
   // public bodyParams?: HttpParams
   public cookieParams?: HttpCookieParams
   public routeParams?: HttpParams

@@ -17,6 +17,12 @@ interface HttpRequestInterface {
     toHttpRequest(): IncomingMessage;
 }
 declare class HttpRequest extends IncomingMessage {
+    /**
+     *
+     * @param im
+     * @param routeParams
+     */
+    static fromIncommingMessage(im: IncomingMessage, routeParams?: HttpParams): HttpRequest;
     cookieParams?: HttpCookieParams;
     routeParams?: HttpParams;
     queryParams?: HttpParams;
@@ -43,6 +49,12 @@ declare class HttpRequest extends IncomingMessage {
 }
 
 declare class Http2Request extends Http2ServerRequest {
+    /**
+     *
+     * @param im
+     * @param routeParams
+     */
+    static fromIncommingMessage(im: Http2ServerRequest, routeParams?: HttpParams): Http2Request;
     cookieParams?: HttpCookieParams;
     routeParams?: HttpParams;
     queryParams?: HttpParams;

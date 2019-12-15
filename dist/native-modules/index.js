@@ -96,6 +96,18 @@ var HttpRequest = /** @class */ (function (_super) {
         return _this;
     }
     /**
+     *
+     * @param im
+     * @param routeParams
+     */
+    HttpRequest.fromIncommingMessage = function (im, routeParams) {
+        var request = im;
+        request.cookieParams = request.parseCookieParams();
+        request.routeParams = routeParams;
+        request.queryParams = request.parseQueryParams();
+        return request;
+    };
+    /**
      * Parse Cookie string
      * @param cookies
      */
@@ -140,6 +152,18 @@ var Http2Request = /** @class */ (function (_super) {
         _this.queryParams = _this.parseQueryParams();
         return _this;
     }
+    /**
+     *
+     * @param im
+     * @param routeParams
+     */
+    Http2Request.fromIncommingMessage = function (im, routeParams) {
+        var request = im;
+        request.cookieParams = request.parseCookieParams();
+        request.routeParams = routeParams;
+        request.queryParams = request.parseQueryParams();
+        return request;
+    };
     /**
      * Parse Cookie string
      * @param cookies
