@@ -58,7 +58,7 @@
   },
   "types": "dist/index.d.ts",
   "dependencies": {
-    "@glasswing/common": "github:glasswingjs/common#7d58794",
+    "@glasswing/common": "github:glasswingjs/common#049895d",
     "set-cookie-parser": "^2.4.1",
     "yaml": "^1.7.2"
   },
