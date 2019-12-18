@@ -1,20 +1,20 @@
 language: node_js
 node_js:
-  - '8'
-  - '10'
-  - lts/*
-  - node
+- '8'
+- '10'
+- lts/*
+- node
 sudo: false
 cache:
   directories:
-    - node_modules
+  - node_modules
 before_script:
-  - test ! -d node_modules || npm prune
+- test ! -d node_modules || npm prune
 scripts:
-  - npm run test
-  - npm run build
+- npm run test
+- npm run build
 after_script:
-  - test $TRAVIS_NODE_VERSION != '10' && sonar-scanner
+- test $TRAVIS_NODE_VERSION != '10' && sonar-scanner
 notifications:
   email:
     recipients:
@@ -23,7 +23,6 @@ notifications:
     on_failure: always
 addons:
   sonarcloud:
-    organization: "glasswingjs"
+    organization: glasswingjs
     token:
-      secure: "V/z7lC0d1wWYjcFp/IyVVziU1Yz4bCw9IifmOoCRhzmaIdUX/2FtDRm6SGVpS+ZiUkeJI2GMZ9BWO89JXdhCPsi1eCspWkNEWPoVsiLq/q+M5lObhcarhDEWVWBZv5xVd6ZCe/SDG8+WKMqKHlvr3MeD1vtOn2KkupBuXRdLLSzpP8/EMGauACdUQ5Oe3dQ2xbYo8if9kAa9ubf7XYLB4/4RBwsxmdnPgoofRfF+CqcSVFTZG6LKbuVSwBJSyx76/t69DdJAKGhVJEqZdAysFnQ9AoagwJvrkZStphaJ/gG0aTLkDIgkvPFO9Q8BygZI99ZcBuaYGMxFCj4b6sk61OWH+fL/fp/bcqzvICezB9AeOAVZZ7P65yVLdHxXvJzjEl839oe64arkmM/oydnkEPd4rE1KHHEDCOt5ssxCyHHtnq9AI/RHOvlecvaSvSE78lWNnNRcCHfHq+AKuXDrgmInZ5Ln08/7PyC/TZAFT2c+hDuUjLotnY6Y9vV19WpwXV46Ewwz+jx0P0htC2KHwobGe2VqJsQjYLn6pgDyYIIIkUrXIMm83nbZhjCkgUU3hfQJ9U6jYfJ0qz5DVB+0BiAGnmVYPoSROQfeeyN+vBROe0b/2I5ROrkUxRXFOMo7HWud/eIofmc3MDmFjrrz3yJZMFTlhjCRFOuIwBwKSRc="
-
+      secure: Sx02J9KXdgAgKZ4IZR0U8r0dDGnLbHhceXC10UhXgecpA3FOq/AJfh/XqQis6hkGVwhtgF+9OMLV7TcUyP/9w2M7KSHN5gmqyF88lPvmnk4GS009Kapo1G9rYnnWL52DEXeFaXZIxJKJNhuoGq5idCgMQvXSxgyDiSJcz1NNMVER6EPe5lN0kE4uAurcejLDR9s5GED0TjPhqp3u/MgzI3k+ljeIAX3UzJEQCmibgr43CvPqE2kj6O1X8aF1t8LUeFpzSSCJhL7NFyDDSH96VHVMLES6O2MJwm1PgpITJa5sYngncXnG3PXhpXiV7iuoXTzxj+qAeiAYT4EU3WKd1zu2vZj35IjqeWh3+ddWzjjk3W0BikmluX5dl/55iUo9LV/mo4JVr1qL2sDwBFDUhf2q954Q5Gfj6v/2GUrIdtIpgB9PF6gMOOq66cnTe5Qp1lJhorQCgXZCanGQ8F0UI1caSY6LYveCMNAOz9FVvfjCgYrT/ETKQn6dSzCpezHtZ3rajW34wq1WOAhoyjZHW6uQew5gjz1laTMI/OKHQmsrOobLwfRre0UachXfp5aRY46s1BboIvBt31NAtu+TU7epK/1HTF+Qj+be3VxGLnoXWpwLlfSHdFx+LbCNWE+hZlEPHjPcUSS6qH99FF1A9zF0rX6Lau2v3p3GoYDyGFU=
